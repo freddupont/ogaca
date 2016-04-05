@@ -1,0 +1,384 @@
+Fichier precisant les resultats de sortie de l optimisation
+initialisation des objets faites
+Debut de la fonction cal et eval nbiter:0
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.08318e+07
+lvl.caleteval: Contrainte de la table:1.08318e+07 
+lvl.caleteval: bariere de la contrainte 1.17329e+14
+lvl.caleteval: coef de la contrainte 2.16637e+07
+lvl.caleteval: masse:  3.13642e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.17329e+14
+lvltest: critere initial n0 valeur 3.13642e+06
+lvltest: critere initial n1 valeur 1.08318e+07
+opti iteration initial objectifm:1.17329e+14 
+opti Debut de la boucle1 
+Debut de la fonction cal et eval nbiter:1
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.09604e+07
+lvl.caleteval: Contrainte de la table:1.09604e+07 
+lvl.caleteval: bariere de la contrainte 1.20131e+14
+lvl.caleteval: coef de la contrainte 2.19208e+07
+lvl.caleteval: masse:  3.10271e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.20131e+14
+opti iteration objectif actuel 1.17329e+14 objectifm:1.20131e+14 pas10
+opti Refus du pas de descente nouveaux pas5
+opti Debut de la boucle2 
+Debut de la fonction cal et eval nbiter:2
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.04323e+07
+lvl.caleteval: Contrainte de la table:1.04323e+07 
+lvl.caleteval: bariere de la contrainte 1.08833e+14
+lvl.caleteval: coef de la contrainte 2.08646e+07
+lvl.caleteval: masse:  3.1171e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.08833e+14
+opti iteration objectif actuel 1.17329e+14 objectifm:1.08833e+14 pas5
+ opti Acceptation du pas de descente
+opti Debut de la boucle3 
+Debut de la fonction cal et eval nbiter:3
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.13524e+07
+lvl.caleteval: Contrainte de la table:1.13524e+07 
+lvl.caleteval: bariere de la contrainte 1.28876e+14
+lvl.caleteval: coef de la contrainte 2.27047e+07
+lvl.caleteval: masse:  3.09524e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.28876e+14
+opti iteration objectif actuel 1.08833e+14 objectifm:1.28876e+14 pas5.5
+opti Refus du pas de descente nouveaux pas2.75
+opti Debut de la boucle4 
+Debut de la fonction cal et eval nbiter:4
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.04358e+07
+lvl.caleteval: Contrainte de la table:1.04358e+07 
+lvl.caleteval: bariere de la contrainte 1.08905e+14
+lvl.caleteval: coef de la contrainte 2.08716e+07
+lvl.caleteval: masse:  3.10097e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.08905e+14
+opti iteration objectif actuel 1.08833e+14 objectifm:1.08905e+14 pas2.75
+ opti Acceptation du pas de descente
+opti Debut de la boucle5 
+Debut de la fonction cal et eval nbiter:5
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.13786e+07
+lvl.caleteval: Contrainte de la table:1.13786e+07 
+lvl.caleteval: bariere de la contrainte 1.29473e+14
+lvl.caleteval: coef de la contrainte 2.27572e+07
+lvl.caleteval: masse:  3.07932e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.29473e+14
+opti iteration objectif actuel 1.08905e+14 objectifm:1.29473e+14 pas3.025
+opti Refus du pas de descente nouveaux pas1.5125
+opti Debut de la boucle6 
+Debut de la fonction cal et eval nbiter:6
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.1378e+07
+lvl.caleteval: Contrainte de la table:1.1378e+07 
+lvl.caleteval: bariere de la contrainte 1.29459e+14
+lvl.caleteval: coef de la contrainte 2.2756e+07
+lvl.caleteval: masse:  3.08395e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.29459e+14
+opti iteration objectif actuel 1.08905e+14 objectifm:1.29459e+14 pas1.5125
+opti Refus du pas de descente nouveaux pas0.75625
+opti Debut de la boucle7 
+Debut de la fonction cal et eval nbiter:7
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.0459e+07
+lvl.caleteval: Contrainte de la table:1.0459e+07 
+lvl.caleteval: bariere de la contrainte 1.09391e+14
+lvl.caleteval: coef de la contrainte 2.0918e+07
+lvl.caleteval: masse:  3.08606e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.09391e+14
+opti iteration objectif actuel 1.08905e+14 objectifm:1.09391e+14 pas0.75625
+ opti Acceptation du pas de descente
+opti Debut de la boucle8 
+Debut de la fonction cal et eval nbiter:8
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.04805e+07
+lvl.caleteval: Contrainte de la table:1.04805e+07 
+lvl.caleteval: bariere de la contrainte 1.09842e+14
+lvl.caleteval: coef de la contrainte 2.09611e+07
+lvl.caleteval: masse:  3.07188e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.09842e+14
+opti iteration objectif actuel 1.09391e+14 objectifm:1.09842e+14 pas0.831875
+ opti Acceptation du pas de descente
+opti Debut de la boucle9 
+Debut de la fonction cal et eval nbiter:9
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06211e+07
+lvl.caleteval: Contrainte de la table:1.06211e+07 
+lvl.caleteval: bariere de la contrainte 1.12808e+14
+lvl.caleteval: coef de la contrainte 2.12422e+07
+lvl.caleteval: masse:  3.0575e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.12808e+14
+opti iteration objectif actuel 1.09842e+14 objectifm:1.12808e+14 pas0.915063
+opti Refus du pas de descente nouveaux pas0.457531
+opti Debut de la boucle10 
+Debut de la fonction cal et eval nbiter:10
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.05033e+07
+lvl.caleteval: Contrainte de la table:1.05033e+07 
+lvl.caleteval: bariere de la contrainte 1.1032e+14
+lvl.caleteval: coef de la contrainte 2.10067e+07
+lvl.caleteval: masse:  3.0587e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.1032e+14
+opti iteration objectif actuel 1.09842e+14 objectifm:1.1032e+14 pas0.457531
+ opti Acceptation du pas de descente
+opti Debut de la boucle11 
+Debut de la fonction cal et eval nbiter:11
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.0525e+07
+lvl.caleteval: Contrainte de la table:1.0525e+07 
+lvl.caleteval: bariere de la contrainte 1.10775e+14
+lvl.caleteval: coef de la contrainte 2.10499e+07
+lvl.caleteval: masse:  3.04581e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.10775e+14
+opti iteration objectif actuel 1.1032e+14 objectifm:1.10775e+14 pas0.503284
+ opti Acceptation du pas de descente
+opti Debut de la boucle12 
+Debut de la fonction cal et eval nbiter:12
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.05459e+07
+lvl.caleteval: Contrainte de la table:1.05459e+07 
+lvl.caleteval: bariere de la contrainte 1.11217e+14
+lvl.caleteval: coef de la contrainte 2.10919e+07
+lvl.caleteval: masse:  3.03356e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.11217e+14
+opti iteration objectif actuel 1.10775e+14 objectifm:1.11217e+14 pas0.553613
+ opti Acceptation du pas de descente
+opti Debut de la boucle13 
+Debut de la fonction cal et eval nbiter:13
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.05627e+07
+lvl.caleteval: Contrainte de la table:1.05627e+07 
+lvl.caleteval: bariere de la contrainte 1.11571e+14
+lvl.caleteval: coef de la contrainte 2.11254e+07
+lvl.caleteval: masse:  3.02298e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.11571e+14
+opti iteration objectif actuel 1.11217e+14 objectifm:1.11571e+14 pas0.608974
+ opti Acceptation du pas de descente
+opti Debut de la boucle14 
+Debut de la fonction cal et eval nbiter:14
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.05789e+07
+lvl.caleteval: Contrainte de la table:1.05789e+07 
+lvl.caleteval: bariere de la contrainte 1.11912e+14
+lvl.caleteval: coef de la contrainte 2.11577e+07
+lvl.caleteval: masse:  3.01311e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.11912e+14
+opti iteration objectif actuel 1.11571e+14 objectifm:1.11912e+14 pas0.669872
+ opti Acceptation du pas de descente
+opti Debut de la boucle15 
+Debut de la fonction cal et eval nbiter:15
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.05914e+07
+lvl.caleteval: Contrainte de la table:1.05914e+07 
+lvl.caleteval: bariere de la contrainte 1.12177e+14
+lvl.caleteval: coef de la contrainte 2.11827e+07
+lvl.caleteval: masse:  3.00443e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.12177e+14
+opti iteration objectif actuel 1.11912e+14 objectifm:1.12177e+14 pas0.736859
+ opti Acceptation du pas de descente
+opti Debut de la boucle16 
+Debut de la fonction cal et eval nbiter:16
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06024e+07
+lvl.caleteval: Contrainte de la table:1.06024e+07 
+lvl.caleteval: bariere de la contrainte 1.1241e+14
+lvl.caleteval: coef de la contrainte 2.12047e+07
+lvl.caleteval: masse:  2.99621e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.1241e+14
+opti iteration objectif actuel 1.12177e+14 objectifm:1.1241e+14 pas0.810545
+ opti Acceptation du pas de descente
+opti Debut de la boucle17 
+Debut de la fonction cal et eval nbiter:17
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06093e+07
+lvl.caleteval: Contrainte de la table:1.06093e+07 
+lvl.caleteval: bariere de la contrainte 1.12557e+14
+lvl.caleteval: coef de la contrainte 2.12186e+07
+lvl.caleteval: masse:  2.98965e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.12557e+14
+opti iteration objectif actuel 1.1241e+14 objectifm:1.12557e+14 pas0.891599
+ opti Acceptation du pas de descente
+opti Debut de la boucle18 
+Debut de la fonction cal et eval nbiter:18
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.07469e+07
+lvl.caleteval: Contrainte de la table:1.07469e+07 
+lvl.caleteval: bariere de la contrainte 1.15496e+14
+lvl.caleteval: coef de la contrainte 2.14938e+07
+lvl.caleteval: masse:  2.98306e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.15496e+14
+opti iteration objectif actuel 1.12557e+14 objectifm:1.15496e+14 pas0.980759
+opti Refus du pas de descente nouveaux pas0.490379
+opti Debut de la boucle19 
+Debut de la fonction cal et eval nbiter:19
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06194e+07
+lvl.caleteval: Contrainte de la table:1.06194e+07 
+lvl.caleteval: bariere de la contrainte 1.12771e+14
+lvl.caleteval: coef de la contrainte 2.12387e+07
+lvl.caleteval: masse:  2.98324e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.12771e+14
+opti iteration objectif actuel 1.12557e+14 objectifm:1.12771e+14 pas0.490379
+ opti Acceptation du pas de descente
+opti Debut de la boucle20 
+Debut de la fonction cal et eval nbiter:20
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06274e+07
+lvl.caleteval: Contrainte de la table:1.06274e+07 
+lvl.caleteval: bariere de la contrainte 1.12943e+14
+lvl.caleteval: coef de la contrainte 2.12549e+07
+lvl.caleteval: masse:  2.97741e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.12943e+14
+opti iteration objectif actuel 1.12771e+14 objectifm:1.12943e+14 pas0.539417
+ opti Acceptation du pas de descente
+opti Debut de la boucle21 
+Debut de la fonction cal et eval nbiter:21
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06353e+07
+lvl.caleteval: Contrainte de la table:1.06353e+07 
+lvl.caleteval: bariere de la contrainte 1.1311e+14
+lvl.caleteval: coef de la contrainte 2.12706e+07
+lvl.caleteval: masse:  2.97186e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.1311e+14
+opti iteration objectif actuel 1.12943e+14 objectifm:1.1311e+14 pas0.593359
+ opti Acceptation du pas de descente
+opti Debut de la boucle22 
+Debut de la fonction cal et eval nbiter:22
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06396e+07
+lvl.caleteval: Contrainte de la table:1.06396e+07 
+lvl.caleteval: bariere de la contrainte 1.13201e+14
+lvl.caleteval: coef de la contrainte 2.12792e+07
+lvl.caleteval: masse:  2.96751e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.13201e+14
+opti iteration objectif actuel 1.1311e+14 objectifm:1.13201e+14 pas0.652695
+ opti Acceptation du pas de descente
+opti Debut de la boucle23 
+Debut de la fonction cal et eval nbiter:23
+lvl.caleteval: Contrainte n:1 
+lvl.dfo_compliance: entre dans la bouclelvl.dfo_compliance: etape 2
+lvl.dfo_compliance: depl2
+lvl.dfo_compliance: cont
+lvl.dfo_compliance: debut siefnodeplno
+lvl.dfo_compliance: Compliance :1.06449e+07
+lvl.caleteval: Contrainte de la table:1.06449e+07 
+lvl.caleteval: bariere de la contrainte 1.13314e+14
+lvl.caleteval: coef de la contrainte 2.12898e+07
+lvl.caleteval: masse:  2.96246e+06
+lvl.caleteval: coef du volume -0.2
+lvl.caleteval:Fin de la fonction cal et eval funcobj:1.13314e+14

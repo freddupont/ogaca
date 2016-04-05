@@ -1,0 +1,209 @@
+#########################################################
+#test catalogue
+aster_dir='/opt/aster/NEW10'
+bibli_dir='/home/fred/asteretude/kuwait/bibli'
+fichiercatalogue='/tmp/cata.mar'
+fichiertemp='/tmp/cata.tmp'
+
+
+import sys
+
+
+#importation du catalogue
+sys.path.append(bibli_dir)
+import orientation_poutre_beta2
+
+#utilise par la suite pour la generation du maillage
+sys.path.append(aster_dir+'/bibpyt/Utilitai')
+from sup_gmsh import *
+
+
+
+
+
+
+##traitement aster
+DEBUT(PAR_LOT='NON');
+
+
+#cata=catalogue_beta2.CATALOGUE_POUTRE();#chargement du catalogue
+#
+#cata.section_ajout("IPE100","isym",(0.1,0.055,0.0041,0.0057,0.007))#ajout d un ipe
+#cata.section_generation("IPE100")
+#cata.section_affiche("IPE100")
+
+
+##Verification des resultats:
+##generation du maillage a la volle
+PP0=Point(0,0,0)
+PP1=Point(1,0,0)
+PP2=Point(0,1,1)
+PP3=Point(-1,1,1)
+LL1=Line(PP0,PP1)
+LL1.Transfinite(5)
+LL2=Line(PP0,PP2)
+LL2.Transfinite(5)
+LL3=Line(PP2,PP3)
+LL3.Transfinite(5)
+mesh2=Mesh()
+mesh2.Physical('LL1',LL1)
+mesh2.Physical('LL2',LL2)
+mesh2.Physical('LL3',LL3)
+mesh2.Physical('PP0',PP0)
+mesh2.Physical('PP1',PP1)
+mesh2.Physical('PP2',PP2)
+mesh2.Physical('PP3',PP3)
+
+
+MA=mesh2.LIRE_GMSH();
+
+#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MA),);
+
+#on pose les hypotheses
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='POU_D_E',),);
+
+MATR=DEFI_MATERIAU(ELAS=_F(E=210E9,
+                           NU=0.3,),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MATR,),);
+
+
+#cata.affecter_GRMA_TYPE(('LL1','LL2','LL3'),"IPE100")
+#integration dans CA ici.
+CAREL=AFFE_CARA_ELEM(MODELE=MO,
+                     INFO=1,
+                     POUTRE=_F(GROUP_MA=('LL1','LL2','LL3'),SECTION='RECTANGLE',CARA=('H'),VALE=(0.1)),
+                     ORIENTATION=_F(GROUP_MA='LL3',VALE=45,CARA='ANGL_VRIL'),
+                    )
+
+#orientation_poutre_beta2.orientation_poutre_vy(GROUP_MA=('LL1','LL2','LL3'),
+#                                               MAILLAGE=MA,MODELE=MO,CARA_ELEM=CAREL,
+#                                               CHAM_MATER=CHMAT,UNITE=80,RETOUR_TABLE=True,SAUVEGARDE_CHAMP=True)
+retour=orientation_poutre_beta2.orientation_poutre_vyz(GROUP_MA=('LL1','LL2','LL3'),
+                                               MAILLAGE=MA,MODELE=MO,CARA_ELEM=CAREL,
+                                               CHAM_MATER=CHMAT,UNITE=80,RETOUR_TABLE=True,SAUVEGARDE_CHAMP=True)
+print retour
+#
+#fichiertemp='/home/fred/asteretude/kuwait/testpylotage/cata.tmp'
+#cata.sauvegarde_pour_3d(fichiertemp)
+#CHARGX=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FX=1000,),);
+#
+#
+#ResuX=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGX,),
+#                    );
+#
+#ResuX=CALC_NO(reuse =ResuX,
+#              RESULTAT=ResuX,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuX=CALC_ELEM(reuse =ResuX,
+#             RESULTAT=ResuX,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuX,),);
+#
+#CHARGY=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FY=1000,),);
+#ResuY=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGY,),
+#                    );
+#
+#ResuY=CALC_NO(reuse =ResuY,
+#              RESULTAT=ResuY,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuY=CALC_ELEM(reuse =ResuY,
+#             RESULTAT=ResuY,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=82,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuY,),);
+#CHARGZ=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FZ=1000,),);
+#ResuZ=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGZ,),
+#                    );
+#
+#ResuZ=CALC_NO(reuse =ResuZ,
+#              RESULTAT=ResuZ,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuZ=CALC_ELEM(reuse =ResuZ,
+#             RESULTAT=ResuZ,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=84,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuZ,),);
+#
+#
+#CHARGRX=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      MX=1000,),);
+#ResuRX=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGRX,),
+#                    );
+#
+#ResuRX=CALC_NO(reuse =ResuRX,
+#              RESULTAT=ResuRX,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuRX=CALC_ELEM(reuse =ResuRX,
+#             RESULTAT=ResuRX,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=83,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuRX,),);
+
+
+FIN();

@@ -1,0 +1,319 @@
+## optimisation d un canteliver en 3D
+## fichier mis au point par frederic renou
+#################################################
+
+
+DEBUT(PAR_LOT='NON');
+
+
+########################################################################
+##Définition des model de calcul et des materiaux
+########################################################################
+MAIL=LIRE_MAILLAGE(FORMAT='MED');
+#MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_PEAU_3D=_F(GROUP_MA=('Group_25','Group_26','Group_27','Group_28'),),);
+MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_PEAU_3D=_F(GROUP_MA=('Group_1','Group_2','Group_3'),),);
+
+#MAILLAGE=DEFI_GROUP(reuse=MAILLAGE,MAILLAGE=MAILLAGE,CREA_GROUP_MA=_F(NOM="enri",UNION=('Fuse_10','GrFND','Gr13',)));
+#MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="enri",UNION=('Group_1','Group_2','Group_3','VOL')));
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="enri",UNION=('Group_1v','Group_2v','Group_3v','VOLv')));
+
+MODEMEV=AFFE_MODELE(MAILLAGE=MAIL,AFFE=_F(GROUP_MA=('Group_1v','Group_2v','Group_3v','VOLv'),PHENOMENE='MECANIQUE',MODELISATION='3D',),);
+
+
+
+########################################################################
+##Defninition de la level set initial
+########################################################################
+
+#recuperation de la geometrie
+CHGEOM = CREA_CHAMP ( OPERATION = 'EXTR' , TYPE_CHAM = 'NOEU_GEOM_R' ,NOM_CHAM = 'GEOMETRIE' , MAILLAGE = MAIL , INFO = 1 , )
+#definition de la fonction initial
+#Attention les valeurs initiales doivent etre superieur a la distance max du model
+def f_ini(x,y,z):
+	#cas du cylindre vertical de centre xc,yc et de rayon R 
+	#xc=100.;
+	#yc=100.;
+	#R=90.;
+	#if (x-xc)**2+(y-yc)**2<R**2:
+		#return 1;
+	#return -1
+		
+	#cas du cercle de centre xc,yc,zc,R
+	#xc=0;
+	#yc=0;
+	#zc=4;
+	#R=2;
+	#if ((x-xc)**2+(y-yc)**2+(z-zc)**2>R**2):
+		#if z>4.3:return 0;
+	#cas du plan
+	#if y<100: return -1;
+	#return 1;
+	#cas du carre
+	min=40;
+	max=1500;
+	if y>min and y<max and x>min and x<max:
+		return 200;
+	else:
+		return -200;
+
+
+FINI= FORMULE(NOM_PARA= ('X','Y','Z'), VALE='f_ini(X,Y,Z)')
+CHFINI=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEV,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FINI));
+CHLVL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFINI, CHAM_PARA=(CHGEOM,));
+
+
+def f_depl(x,y,z):
+	min=100;
+	max=150;
+	if (y>min and y<max):
+		return 20;
+	else:
+		return 0;
+
+
+FDEPL= FORMULE(NOM_PARA= ('X','Y','Z'), VALE='f_depl(X,Y,Z)')
+CHFDEPL=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEV,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FDEPL));
+CHDEPL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFDEPL, CHAM_PARA=(CHGEOM,));
+
+def f_depl0(x,y,z):
+	min=100;
+	max=150;
+	if y>min:
+		return 0.0001;
+	else:
+		return 0.0001;
+
+
+FDEPL0= FORMULE(NOM_PARA= ('X','Y','Z'), VALE='f_depl0(X,Y,Z)')
+CHFDEPL0=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEV,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FDEPL0));
+CHDEPL0=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFDEPL0, CHAM_PARA=(CHGEOM,));
+
+##utilisation du champ decris a l unite 21
+#DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVL),),);
+
+
+#CHLVLR=LIRE_RESU(FORMAT='MED',UNITE=21,MAILLAGE=MAIL,TYPE_RESU='EVOL_THER',FORMAT_MED=_F(NOM_CHAM='NOEU_NEUT_R',NOM_CHAM_MED='.9011962________________________'),INST=0)
+
+#CHLVL=LIRE_CHAMP(TYPE_CHAM='NOEU_NEUT_R',UNITE=21,MAILLAGE=MAIL,NOM_MED='CHLVL___________________________',NOM_CMP_IDEM='OUI',)
+
+
+#Creation du fichier de resultat qui contient la LVLSET
+IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHLVL,),);
+
+############################
+##creation du cham de materiaux
+
+#MAdur=DEFI_MATERIAU(ELAS=_F(E=210,NU=0.2,RHO=1000,));
+#MAmou=DEFI_MATERIAU(ELAS=_F(E=0.21,NU=.2,RHO=1,));
+
+def f_young(x):
+	if x<0: return 210;
+	return 210;
+
+FYOUNG= FORMULE(NOM_PARA= ('X1'), VALE='f_young(X1)')
+
+
+CHFY=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEV,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=(FYOUNG)));
+	
+CHYOUNG=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFY, CHAM_PARA=(CHLVL,));
+
+
+NU_F=DEFI_CONSTANTE(VALE=0.3)
+E_F= DEFI_FONCTION(NOM_PARA='NEUT1',VALE=(+1.E-9,+1.E-9,1.E+9,+1.E+9))
+
+MAMEC=DEFI_MATERIAU (ELAS_FO=_F(E=E_F,NU=NU_F,RHO=1,));
+
+CHMATE=AFFE_MATERIAU(MAILLAGE=MAIL,
+			AFFE=_F(TOUT='OUI',MATER=MAMEC),
+			AFFE_VARC=_F(NOM_VARC='NEUT1',CHAMP_GD=CHYOUNG),
+			)
+
+
+fiss=DEFI_FISS_XFEM(MODELE=MODEMEV,
+		TYPE_DISCONTINUITE = 'INTERFACE',
+		DEFI_FISS=_F(
+			CHAM_NO_LSN=CHLVL,
+			#CHAM_NO_LST=CHLVL
+			),
+		GROUP_MA_ENRI='enri',
+		CHAM_DISCONTINUITE  ="DEPL",
+		#ORIE_FOND=_F( 
+			#PFON_INI=(0, 0.,4.),
+			#VECT_ORIE = (0.,0.,1.),
+			#POINT_ORIG=(0, 0.,4.)),
+		#INFO=1,
+		);
+
+
+
+#definition du maillage auxiliaire
+#MAILAX=LIRE_MAILLAGE(FORMAT='MED',UNITE=21);
+#MAILAX=MODI_MAILLAGE(reuse =MAILAX,MAILLAGE=MAILAX,ORIE_PEAU_3D=_F(GROUP_MA=('Group_1','Group_2','Group_3'),),);
+#MAILAX=DEFI_GROUP(reuse=MAILAX,MAILLAGE=MAILAX,CREA_GROUP_MA=_F(NOM="enri",UNION=('Group_1v','Group_2v','Group_3v','VOLv')));
+
+#MODAX=AFFE_MODELE(MAILLAGE=MAILAX,AFFE=_F(GROUP_MA=('Group_1v','Group_2v','Group_3v','VOLv'),PHENOMENE='MECANIQUE',MODELISATION='3D',),);
+#CHFINIAX=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODAX,PROL_ZERO='OUI',
+		#AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FINI));
+#CHGEOMAX = CREA_CHAMP ( OPERATION = 'EXTR' , TYPE_CHAM = 'NOEU_GEOM_R' ,NOM_CHAM = 'GEOMETRIE' , MAILLAGE = MAILAX , INFO = 1 , )
+
+#CHLVLAX=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFINIAX, CHAM_PARA=(CHGEOMAX,));
+
+#fissAX=DEFI_FISS_XFEM(MODELE=MODAX,
+		#TYPE_DISCONTINUITE = 'INTERFACE',
+		#DEFI_FISS=_F(
+			#CHAM_NO_LSN=CHLVLAX,
+			##CHAM_NO_LST=CHLVL
+			#),
+		#GROUP_MA_ENRI='enri',
+		#CHAM_DISCONTINUITE  ="DEPL",
+		#);
+
+#MODXAX=MODI_MODELE_XFEM(MODELE_IN=MODAX,
+                         #FISSURE=fissAX,);
+			 
+			 
+fiss2=PROPA_CHLVL(MODELE=MODEMEV,DA_MAX=200,RAYON=200,FISS_PROP=fiss,ITERMAX=4,METHODE ="SIMPLEXE",INFO=2)
+
+#CHLVLOU2=CREA_CHAMP(OPERATION='EXTR',FISSURE=fiss2,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+
+#pour plantage
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fiss3),),);
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHLVLOU2,),);
+
+for i in range(200):
+	
+	fiss3=PROPA_CHLVL(MODELE=MODEMEV,PAS=.5,DA_MAX=200,RAYON=100,ITERMAX=1,FISS_PROP=fiss2,CH_VITN=CHDEPL,METHODE ="SIMPLEXE",INFO=1)
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fiss2),),);
+	fiss2=PROPA_CHLVL(MODELE=MODEMEV,PAS=.5,DA_MAX=200,RAYON=100,ITERMAX=1,FISS_PROP=fiss3,CH_VITN=CHDEPL,METHODE ="SIMPLEXE",INFO=1)
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fiss3),),);
+	print 5*'\n'+'nombre de boucle%d'%i
+
+CHLVLOU3=CREA_CHAMP(OPERATION='EXTR',FISSURE=fiss2,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+
+#IMPR_RESU(FORMAT='MED',UNITE=82,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHDEPL0,),);
+
+
+
+MODXFEM=MODI_MODELE_XFEM(MODELE_IN=MODEMEV,FISSURE=fiss2,CONTACT='NON');
+
+##########################################################################
+####Definition des charges
+##########################################################################
+#CHAR=AFFE_CHAR_MECA(MODELE=MODEMEV,DDL_IMPO=_F(GROUP_MA='Group_2',DX=0.0,DY=0.0,DZ=0.0,),FORCE_FACE=_F(GROUP_MA='Group_3',FX=0.1,),);
+CHAR=AFFE_CHAR_MECA(MODELE=MODEMEV,FORCE_FACE=_F(GROUP_MA='Group_3',FX=0.1,),);
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_NO=_F(NOM="NGR2",GROUP_MA='Group_2'));
+
+
+#creation d un groupe contenant les noeuds hors du domaine
+CHLVLT=CHLVLOU3.EXTR_COMP('X1',[],1);
+#print CHLVLT.valeurs;
+#print CHLVLT.noeud;
+motscle={};
+motscle['NOEUD']=[]
+max=len(CHLVLT.valeurs);
+for i in range(max):
+	if CHLVLT.valeurs[i]<0:
+		motscle['NOEUD'].append('N'+str(CHLVLT.noeud[i]));
+#print motscle['NOEUD'];
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_NO=_F(NOM="LVLNEG",**motscle));
+#on ne prend pas les noeuds qui sont bloque par ailleur
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_NO=_F(NOM="LVLBLOQ",DIFFE=('LVLNEG','NGR2')));
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="manoneg",OPTION='APPUI_LACHE',GROUP_NO='LVLNEG'));
+
+
+IMPR_RESU(FORMAT='MED',UNITE=82,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHLVLOU3,),);
+
+#affectation des charge de bloquage des degree de liberte
+blocdll=AFFE_CHAR_MECA(MODELE=MODEMEV,DDL_IMPO=_F(DX=0.0,DY=0.0,DZ=0.0,GROUP_MA='Group_2'),);
+
+MVNEG=AFFE_CHAR_MECA(MODELE=MODEMEV,DDL_IMPO=_F(DX=0.0,DY=0.0,DZ=0.0,GROUP_NO='LVLBLOQ'),);
+
+
+# pour la partie exterieur non charge 'Group_1'
+
+CHARXFEM=AFFE_CHAR_MECA(MODELE=MODXFEM,LIAISON_XFEM='OUI',);
+
+L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=_F(JUSQU_A=1.0,
+                                    NOMBRE=1),);
+
+RESUSTAT=STAT_NON_LINE(MODELE=MODXFEM,
+                   CHAM_MATER=CHMATE,
+                   EXCIT=(_F(CHARGE=CHAR,),
+                          _F(CHARGE=blocdll,),
+                          _F(CHARGE=MVNEG,),
+                          _F(CHARGE=CHARXFEM,),),
+                   COMP_ELAS=_F(RELATION='ELAS',
+                                TOUT='OUI',),
+                   INCREMENT=_F(LIST_INST=L_INST),
+                   INFO=1,);
+
+#Exploitation classique des resultats
+#RESUSTAT=CALC_ELEM(reuse =RESUSTAT,
+             #RESULTAT=RESUSTAT,
+             #OPTION=('VARI_ELGA'),);
+
+#RESUSTAT=CALC_NO(reuse =RESUSTAT,
+             #RESULTAT=RESUSTAT,
+             #OPTION=('EPSI_NOEU_DEPL',),);
+
+#IMPR_RESU(FORMAT='MED',
+          #UNITE=83,
+          #RESU=_F(MAILLAGE=MAIL,
+                  #RESULTAT=RESUSTAT,
+                  #NOM_CHAM=('EPSI_NOEU_DEPL','DEPL','EPSI_ELGA_DEPL'),),);
+
+
+#exploitation des resultats sur le maillage fissurer
+MA_XFEM=POST_MAIL_XFEM(MODELE=MODXFEM,
+                     MAILLAGE_SAIN=MAIL);
+MA_XFEM=DEFI_GROUP(reuse=MA_XFEM,MAILLAGE=MA_XFEM,
+	CREA_GROUP_MA=(
+	#_F(NOM="tout",TOUT='OUI'),
+	_F(NOM="MAPtem",DIFFE=('enri','HEM','manoneg')),
+	_F(NOM="MAP",UNION=('HEP','MAPtem'))
+	));
+
+MAV=DEFI_MATERIAU (ELAS=_F(E=210E9,NU=0.3,RHO=1,));
+CHMATEV=AFFE_MATERIAU(MAILLAGE=MA_XFEM,AFFE=_F(TOUT='OUI',MATER=MAV,),);
+#MASS_3D=POST_ELEM(MODELE=__MODE, CHAM_MATER=CHMATE, MASS_INER=_F(TOUT='OUI',),);
+
+
+MOD_VISU=AFFE_MODELE(MAILLAGE=MA_XFEM,
+                     AFFE=_F(TOUT='OUI',
+                              PHENOMENE='MECANIQUE',
+                              MODELISATION='3D',),) ;
+
+MASS_3D=POST_ELEM(MODELE=MOD_VISU,CHAM_MATER=CHMATEV, MASS_INER=_F(GROUP_MA='MAP',),);
+tatemp=MASS_3D.EXTR_TABLE();
+masse0=tatemp.MASSE[0];
+print 'masse:',masse0
+
+RES_XFEM=POST_CHAM_XFEM(MAILLAGE_SAIN = MAIL,
+                        MAILLAGE_FISS = MA_XFEM,
+                        MODELE        = MODXFEM,
+                        MODELE_VISU   = MOD_VISU,
+                        RESULTAT      = RESUSTAT,
+                        NOM_CHAM      = ('DEPL','SIEF_ELGA'),
+                        INFO          = 2);
+
+
+RES_XFEM=CALC_ELEM(reuse =RES_XFEM,
+             RESULTAT=RES_XFEM,
+	     #MODELE        = MOD_VISU,
+	     CHAM_MATER=CHMATEV,
+             OPTION=('EPSI_ELGA_DEPL'));
+
+IMPR_RESU(FORMAT='MED',
+          UNITE=84,
+          RESU=_F(MAILLAGE=MA_XFEM,
+                  RESULTAT=RES_XFEM,
+                  NOM_CHAM=('DEPL','SIEF_ELGA','EPSI_ELGA_DEPL'),),);
+		  
+
+
+FIN();

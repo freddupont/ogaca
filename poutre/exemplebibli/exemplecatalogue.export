@@ -1,0 +1,47 @@
+P profastk fred@adpi-laptop.der.edf.fr:/home/fred/asteretude/kuwait/exemplebibli/exemplecatalogue.astk
+P serveur localhost
+P username fred
+P aster_root /home/fred/logiciel/SALOME-MECA-2011.1-x86_64/aster
+P platform LINUX64
+P protocol_exec asrun.plugins.server.SSHServer
+P protocol_copyto asrun.plugins.server.SCPServer
+P protocol_copyfrom asrun.plugins.server.SCPServer
+P proxy_dir /tmp
+P noeud adpi-laptop
+P mclient adpi-laptop.der.edf.fr
+P uclient fred
+P version NEW10
+P lang fr
+P debug nodebug
+P mode interactif
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P classe 
+P depart 
+P distrib 
+P exectool 
+P multiple 
+P nomjob exemplecatalogue
+P origine ASTK 1.10.0
+P display adpi-laptop.der.edf.fr:0.0
+A args 
+A memjeveux 64.0
+P mem_aster 100.0
+A tpmax 900
+P memjob 524288
+P tpsjob 15
+P nbmaxnook 5
+P cpresok RESNOOK
+P facmtps 1
+P corefilesize unlimited
+F comm /home/fred/asteretude/kuwait/exemplebibli/exemplecatalogue.comm D 1
+F mess /home/fred/asteretude/kuwait/exemplebibli/out.mess R 6
+F libr /home/fred/asteretude/kuwait/exemplebibli/resu2.med R 81
+F libr /home/fred/asteretude/kuwait/exemplebibli/resu3.med R 82
+F libr /home/fred/asteretude/kuwait/exemplebibli/resu4.med R 83
+F libr /home/fred/asteretude/kuwait/exemplebibli/resu5.med R 84
+F libr /home/fred/asteretude/kuwait/exemplebibli/section.med R 78
+P consbtc oui
+P soumbtc oui
+P actions make_etude

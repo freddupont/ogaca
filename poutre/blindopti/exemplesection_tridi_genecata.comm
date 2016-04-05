@@ -1,0 +1,56 @@
+#exemplesection_tridi_genecata
+#genere un catalogue de section
+
+# ======================================================================
+# COPYRIGHT (C) 2011  FREDERIC RENOU frederic.renou.pb@gmail.com
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM;
+# ======================================================================
+
+
+bibli_dir='/home/fred/asteretude/blindopti/bibli'
+
+import sys
+
+#importation du catalogue
+sys.path.append(bibli_dir)
+import catalogue_beta
+from opti_section_poutre import *
+
+
+
+##traitement aster
+DEBUT(PAR_LOT='NON');
+
+
+fichiercata="/home/fred/asteretude/blindopti/cataCHS.cata"
+cata=catalogue_beta.CATALOGUE_POUTRE();#chargement du catalogue
+##for k in range(0,12):
+##    print "section rond",k,"valeur ",0.05+k/30.
+##    cata.section_ajout("rond%d"%k,"rect",(0.05+k/30.,0.02))#rectangle plein
+cata.section_ajout("C1","rond",(0.0889,0.004))#rectangle plein
+cata.section_ajout("C2","rond",(0.1143,0.004))#rectangle plein
+cata.section_ajout("C3","rond",(0.1683,0.006))#rectangle plein
+cata.section_ajout("C4","rond",(0.1937,0.006))#rectangle plein
+cata.section_ajout("C5","rond",(0.2119,0.008))#rectangle plein
+cata.section_ajout("C6","rond",(0.2445,0.01))#rectangle plein
+cata.section_ajout("C7","rond",(0.273,0.01))#rectangle plein
+cata.section_ajout("C8","rond",(0.3239,0.01))#rectangle plein
+cata.section_ajout("C9","rond",(0.3556,0.01))#rectangle plein
+cata.section_ajout("C10","rond",(0.4064,0.012))#rectangle plein
+cata.section_ajout("C11","rond",(0.457,0.012))#rectangle plein
+cata.section_ajout("C12","rond",(0.508,0.012))#rectangle plein
+cata.section_generation_tout()
+cata.section_sauvegarde_catalogue(fichiercata)#sauvegarde des section
+
+FIN();

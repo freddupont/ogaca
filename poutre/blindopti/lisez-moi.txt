@@ -1,0 +1,78 @@
+Description de l'usage de cette bibliotheque
+
+
+---------------------------------------------------------------------------------
+la bibliotheque est composé de fichier .py concu pour tourner avec CA11 ou salome 6.3.0
+
+blind_opti.py
+#realise une otimisation sur un element de dimention infine seul f et f' sont connue
+
+catalogue_beta.py
+#V4
+#permet de generer des caracteristiques de section puis de les reinjecter dans CA
+#permet de sauvegarder un catalogue de profile
+#permet d exporter un script salome qui genere une vue volumique
+
+genetridi.py
+#genere un tridi ou une poutre treilli de manier semi automatique
+
+IOBeam.py
+#fichier destiner a ecrire des fichier de poutre dans differents style de fichier texte
+#et pour differents logiciel.
+
+opti_analytique.py
+#permet de parametrer blind_opti pour des tests analytiques depuis CA
+
+#opti_section_poutre.py
+#contient l'ensemble des macro necessaire pour utiliser blind_opti sur de l'optimisation de section de poutre
+
+#orientation_poutre_beta.py
+#definis des fonctions qui genere un fichier med avec lorientation des poutres
+
+#scalarsearch.py
+#utilise les fonctions scipy de recherche scalaire modifié pour prendre en compte
+#les specificite de CA utilise par blind_opti
+
+sup_gmsh Utilitai
+recuperer depuis les sources aster pour sauvegarder un fichier .geo en debugage
+
+---------------------------------------------------------------------------------
+exemple d'utilisation simple
+
+#exempeleanalytique.comm
+#test de blind opti
+#simple test analytique
+
+#exemplesalomecata1.py
+#exemplesalomecata2.py
+#1 lecture et affichage des sections du catalogue prealablement sauvegarder
+#2 lecture et affichage volumique du catalogue prealablement sauvegarder
+#2 peut etre tres long
+
+#exemplesection_paf_genecata.comm
+#exemplesection_paf.comm
+#exemplesection_paf_salome.py
+#exemple d optimisation de section sur un simple paf
+#a besoin de MAILPAF.med
+#doit s'executer dans l'ordre donne si dessus
+
+---------------------------------------------------------------------------------
+exemple d'utilisation avance
+
+generation et optimisation d une structure tridi
+
+generation de "space frame" avec salome,exportation sous str
+#exemplesection_tridi_gene_tridi.py
+
+retouche depuis le logiciel robotbat
+puis lecture du fichier .str de robot depuis salome avec
+#exemplesection_tridi_readstr.py
+
+generation du catalogue des sections disponible avec
+#exemplesection_tridi_genecata.comm
+
+calcul et optimisation avec
+#exemplesection_tridi.comm
+#test de blind optiopti_sec
+#sur une structure plus complexe de 4000 elements
+#tres lourd a utiliser

@@ -1,0 +1,331 @@
+#import os; 
+sortiepath="\"C:\\waster-10.3.3-1\\Minimalarea\\OUTFILE\"\\";
+sortiepathlinux="/home/fred/asteropti/Minimalarea/Minimalarea/outfile/";
+
+DEBUT(PAR_LOT='NON');
+
+nbofiter=100;
+
+conval=-0.01
+epp=1e-3
+nb=1#main iter
+subit=1
+
+ACIER=DEFI_MATERIAU(ELAS=_F(E=210000000000.0,
+                            NU=0.3,
+                            RHO=7800.0,ALPHA =1e-6),);
+
+MAILt=LIRE_MAILLAGE(FORMAT='MED');
+
+MA_QUAD = CREA_MAILLAGE(
+                             MAILLAGE = MAILt,
+                             LINE_QUAD = _F(
+                                 TOUT = 'OUI'
+                                 )
+                       );
+MAIL=CREA_MAILLAGE(MAILLAGE=MA_QUAD,
+                     MODI_MAILLE=_F(
+                            PREF_NOEUD='NT',
+                            TOUT='OUI',
+                                    OPTION='TRIA6_7'
+                                    #OPTION='QUAD8_9'
+                                    ,),);
+
+#MATRI7 = DEFI_GROUP (reuse = MATRI7, MAILLAGE = MATRI7,
+#  CREA_GROUP_NO = _F ( NOM = 'TOP', GROUP_MA = 'G_1D_11'),);
+#MATRI7 = DEFI_GROUP (reuse = MATRI7, MAILLAGE = MATRI7,
+#  CREA_GROUP_NO = _F ( NOM = 'BOT', GROUP_MA = 'G_1D_12'),);
+
+MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_NORM_COQUE = _F(GROUP_MA = 'G_2D_103'),);
+
+
+MAIL = DEFI_GROUP (reuse = MAIL, MAILLAGE = MAIL,
+  CREA_GROUP_MA = _F ( NOM = 'TOUTMA', TOUT = 'OUI'),
+  CREA_GROUP_NO = _F ( NOM = 'TOUT', GROUP_MA = 'TOUTMA'),);
+MAIL = DEFI_GROUP (reuse = MAIL, MAILLAGE = MAIL,
+  CREA_GROUP_NO = _F ( NOM = 'TOP', GROUP_MA = 'G_1D_11'),);
+MAIL = DEFI_GROUP (reuse = MAIL, MAILLAGE = MAIL,
+  CREA_GROUP_NO = _F ( NOM = 'BOT', GROUP_MA = 'G_1D_12'),);
+
+#MODE=AFFE_MODELE(MAILLAGE=MAIL,
+#                 AFFE=_F(TOUT='OUI',
+#                         PHENOMENE='MECANIQUE',
+#                         MODELISATION='DKT',),);
+
+MODE=AFFE_MODELE(MAILLAGE=MAIL,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='COQUE_3D',),);
+
+MATE=AFFE_MATERIAU(MAILLAGE=MAIL,
+                   AFFE=_F(TOUT='OUI',
+                           MATER=ACIER,),);
+#MATE = DEFI_MATERIAU(
+#       reuse = MATE,
+#       CABLE = _F (),)
+pl=AFFE_CARA_ELEM(MODELE=MODE,
+                        COQUE=_F(GROUP_MA='TOUTMA',
+                                 EPAIS=epp,VECTEUR = (0,0,1)),);
+
+#bloq=AFFE_CHAR_MECA(MODELE=MODE,
+#                    DDL_IMPO=(_F(GROUP_MA=['G_1D_11','G_1D_12'],
+#                                 DZ=0.0,DX=0.0,DY=0.0,),
+                              #),);
+bloqcin=AFFE_CHAR_CINE(MODELE=MODE,
+                    MECA_IMPO=(_F(GROUP_MA=['G_1D_11','G_1D_12'],
+                                 DZ=0.0,DX=0.0,DY=0.0,),
+                              ),);
+
+#juste un force sans interet
+#forcoq=AFFE_CHAR_MECA(MODELE=MODE,
+#                      FORCE_COQUE=_F(GROUP_MA='G_2D_103',
+#                                     F1=-1,F2=-1,),);
+
+
+#pas disponible pour coque 3D                                     
+Contrac=AFFE_CHAR_MECA(MODELE=MODE,
+                      EPSI_INIT =_F(GROUP_MA='TOUTMA',
+                                     EXX=conval,EYY=conval),);
+#Contrac=AFFE_CHAR_MECA(MODELE=MODE,
+#                      EPSI_INIT =_F(GROUP_MA='TOUTMA',
+#                                     EXX=conval,EYY=conval,KXX=conval,KYY=conval),);
+#does not work?
+#Contrac1=AFFE_CHAR_MECA(MODELE=MODE,
+#                      EPSI_INIT =_F(GROUP_MA='TOUTMA',
+#                                     EPXX=conval,EPYY=conval,EPZZ=conval),);
+##PP=AFFE_CHAR_MECA(MODELE=MODE,
+                  ##PESANTEUR=_F(GRAVITE=9.81,DIRECTION =(0,0,-1)),
+                  ##INFO=2,);
+##
+##RESU=MECA_STATIQUE(MODELE=MODE,
+                   ##CHAM_MATER=MATE,
+                   ##CARA_ELEM=pl,
+                   ##EXCIT=(_F(CHARGE=temp,),
+                          ##_F(CHARGE=bloq,),),
+                   ##INFO=1,);
+#test avec DDL impo
+#temp=AFFE_CHAR_MECA(MODELE=MODE,
+#    DDL_IMPO=_F (TOUT='OUI',TEMP=-30));
+
+#la definition de la charge thermique ce fait par le materiaux maintenant
+#CHT30=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_TEMP_R', MODELE=MODE,PROL_ZERO='OUI',
+#                AFFE=_F(TOUT='OUI', NOM_CMP=('TEMP'),VALE=-2e5));                                    
+#Matt=AFFE_MATERIAU(MAILLAGE=MATRI7,
+#                   AFFE=_F(TOUT='OUI',
+#                           MATER=ACIER,),
+#                      AFFE_VARC=_F(CHAMP_GD=CHT30,
+#                                   NOM_VARC='TEMP',
+#                                   VALE_REF=0.,),);
+
+RESU=MECA_STATIQUE(MODELE=MODE,
+                   CHAM_MATER=MATE,
+                   CARA_ELEM=pl,
+                   EXCIT=(
+                          _F(CHARGE=bloqcin,),
+                          _F(CHARGE=Contrac,)),
+                   INFO=1,);
+
+RESU=CALC_ELEM(reuse =RESU,
+               RESULTAT=RESU,
+               OPTION=('SIEF_ELNO_ELGA','SIEF_ELGA_DEPL','EFGE_ELNO_DEPL',),);
+
+RESU=CALC_NO(reuse =RESU,
+             RESULTAT=RESU,
+             TOUT_ORDRE='OUI',
+             OPTION=('REAC_NODA','FORC_NODA','SIEF_NOEU_ELGA',),);
+
+IMPR_RESU(FORMAT='MED',UNITE=74,RESU=_F(MAILLAGE=MAIL,RESULTAT=RESU,),);
+#os.system('ECHO copy fort.74 '+sortiepath+'lineresu.med');
+#os.system('copy fort.74 '+sortiepath+'lineresu.med');
+#DEFI_FICHIER(ACTION='LIBERER',UNITE=74,)
+#os.system('DEL fort.74 ');
+
+#sumreac1=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+#                                 INTITULE='sumreto',
+#                                 RESULTAT=RESU,
+#                                 NOM_CHAM='REAC_NODA',
+#                                 GROUP_NO='TOUT',
+#                                 RESULTANTE=('DX','DY','DZ'),),);
+#sumtop=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+#                                 INTITULE='sumreto',
+#                                 RESULTAT=RESU,
+#                                 NOM_CHAM='REAC_NODA',
+#                                 GROUP_NO='TOP',
+#                                 RESULTANTE=('DX','DY','DZ'),),);
+#sumbot=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+#                                 INTITULE='sumreto',
+#                                 RESULTAT=RESU,
+#                                 NOM_CHAM='REAC_NODA',
+#                                 GROUP_NO='BOT',
+#                                 RESULTANTE=('DX','DY','DZ'),),);
+#                                 
+#IMPR_TABLE(TABLE=sumreac1,);
+#IMPR_TABLE(TABLE=sumtop,);
+#IMPR_TABLE(TABLE=sumbot,);
+#
+#depl1=POST_RELEVE_T(ACTION=_F(OPERATION='EXTREMA',
+#                              INTITULE='maxdepl',
+#                              RESULTAT=RESU,
+#                              NOM_CHAM='DEPL',
+#                              NOM_CMP='DX',),);
+#
+#IMPR_TABLE(TABLE=depl1,);
+#
+#tmass=POST_ELEM(MASS_INER=_F(TOUT='OUI',),
+#                MODELE=MODE,
+#                RESULTAT=RESU,
+#                TITRE='masse',);
+#
+#IMPR_TABLE(TABLE=tmass,);
+##SIGMINI=CREA_CHAMP ( OPERATION='EXTR',
+##                    NOM_CHAM = 'SIEF_ELGA_DEPL' , TYPE_CHAM = 'ELGA_SIEF_R',
+##                    RESULTAT = RESU  )
+#
+#
+#
+##prec=210e8;
+##SIGGACR = CREA_CHAMP( OPERATION= 'AFFE',MODELE=MODE,#OPTION='SIEF_ELGA_DEPL',
+##              TYPE_CHAM='ELGA_SIEF_R' , PROL_ZERO='OUI',INFO=1,
+##              AFFE= (
+##                     _F (TOUT='OUI', NOM_CMP=('SIXX','SIYY'), VALE=(prec,prec,),),
+##              )
+##       )
+##
+###ne marche pas non plus
+##SIGNCR = CREA_CHAMP( OPERATION= 'AFFE',MODELE=MODE,#OPTION='SIEF_ELGA_DEPL',
+##              TYPE_CHAM='NOEU_SIEF_R' , PROL_ZERO='OUI',INFO=1,
+##              AFFE= (
+##                     _F (GROUP_MA = 'G_2D_103', NOM_CMP=('SIXX','SIYY'), VALE=(prec,prec,),),
+##              )
+##       )
+##SIGGACR2= CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_SIEF_R',OPTION='SIEF_ELGA_DEPL',PROL_ZERO='OUI',
+##       MODELE=MODE , CHAM_GD= SIGNCR )
+##
+##IMPR_RESU(FORMAT='MED',UNITE=73,MODELE=MODE,RESU=_F(CHAM_GD = SIGGACR,),);
+##os.system('ECHO copy fort.73 '+sortiepath+'cham.med');
+##os.system('copy fort.73 '+sortiepath+'cham.med');
+##DEFI_FICHIER(ACTION='LIBERER',UNITE=73,)
+##os.system('DEL fort.73 ');
+##
+##TBscr=CREA_TABLE(RESU=_F(CHAM_GD = SIGGACR,TOUT_CMP='OUI',TOUT='OUI'),)
+##IMPR_TABLE(TABLE = TBscr)
+##TBscr2=CREA_TABLE(RESU=_F(CHAM_GD = SIGGACR2,TOUT_CMP='OUI',TOUT='OUI'),)
+##IMPR_TABLE(TABLE = TBscr2)
+##TBsex=CREA_TABLE(RESU=_F(CHAM_GD = SIGMINI,TOUT_CMP='OUI',TOUT='OUI'),)
+##IMPR_TABLE(TABLE = TBsex)
+#
+fmult=DEFI_FONCTION(NOM_PARA='INST',VALE=(0.0,0.0,
+                          1.0,1.0,
+                          ),);
+
+listins=DEFI_LIST_REEL(DEBUT=0,
+                       INTERVALLE=_F(JUSQU_A=1,
+                                     NOMBRE=nb,),);
+
+k=1;
+for k in range (0,nbofiter):
+       RESU2=STAT_NON_LINE(MODELE=MODE,
+                           CHAM_MATER=MATE,
+                           CARA_ELEM=pl,
+                           EXCIT=(_F(CHARGE=bloqcin),
+                                  _F(CHARGE=Contrac,FONC_MULT=fmult,),
+                                  ),
+                           #ETAT_INIT=_F(SIGM=SIGMINI),
+                           COMP_INCR=_F(RELATION='ELAS',#'ELAS''VMIS_ISOT_LINE'
+                                        DEFORMATION='GROT_GDEP',#('PETIT','PETIT_REAC', 'GROT_GDEP', 'SIMO_MIEHE', 'GDEF_HYPO_ELAS', 'GREEN_REAC')
+                                        #ALGO_C_PLAN ='DEBORST',
+                                        TOUT='OUI',),
+                           INCREMENT=_F(LIST_INST=listins,),
+                           #METHODE ='IMPL_EX',not available
+                           NEWTON=_F(
+                            MATRICE = 'TANGENTE',#'ELASTIQUE'
+                            REAC_ITER=0,
+                            #REAC_ITER=0,
+                            REAC_ITER_ELAS=0
+                            ),
+                           RECH_LINEAIRE=_F(
+                            ITER_LINE_MAXI =5,
+                            ),
+                           CONVERGENCE=_F(
+                                           ###RESI_GLOB_RELA=0.0001,
+                                           ITER_GLOB_MAXI=subit,
+                                           ARRET='NON',),
+                           ##CRIT_FLAMB=_F(),
+                           );
+       
+       #RESU2=CALC_NO(reuse =RESU2,
+       #             RESULTAT=RESU2,
+       #             TOUT_ORDRE='OUI',
+       #             OPTION=('REAC_NODA'))
+       #sumreac2=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+       #                                 INTITULE='sumreto',
+       #                                 RESULTAT=RESU2,
+       #                                 NOM_CHAM='REAC_NODA',
+       #                                 GROUP_NO='TOUT',
+       #                                 RESULTANTE=('DX','DY','DZ'),),);
+       #sumtop2=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+       #                                 INTITULE='sumreto',
+       #                                 RESULTAT=RESU2,
+       #                                 NOM_CHAM='REAC_NODA',
+       #                                 GROUP_NO='TOP',
+       #                                 RESULTANTE=('DX','DY','DZ'),),);
+       #sumbot2=POST_RELEVE_T(ACTION=_F(OPERATION='EXTRACTION',
+       #                                 INTITULE='sumreto',
+       #                                 RESULTAT=RESU2,
+       #                                 NOM_CHAM='REAC_NODA',
+       #                                 GROUP_NO='BOT',
+       #                                 RESULTANTE=('DX','DY','DZ'),),);
+       #                                 
+       #IMPR_TABLE(TABLE=sumreac2,);
+       #IMPR_TABLE(TABLE=sumtop2,);
+       #IMPR_TABLE(TABLE=sumbot2,);
+       #
+       #depln=POST_RELEVE_T(ACTION=_F(OPERATION='EXTREMA',
+       #                              INTITULE='maxdepl',
+       #                              RESULTAT=RESU2,
+       #                              NOM_CHAM='DEPL',
+       #                              NOM_CMP=('DX'),),);
+       #
+       #IMPR_TABLE(TABLE=depln,);
+       
+       #
+       ##DEPL=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',OPERATION='EXTR',RESULTAT=RESU2,NOM_CHAM='DEPL',);
+       ##MATRI7=MODI_MAILLAGE(reuse =MATRI7,MAILLAGE=MATRI7,DEFORME=_F(OPTION='TRAN',DEPL=DEPL,),);
+       #DEPL1=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',OPERATION='EXTR',RESULTAT=RESU2,NOM_CHAM='DEPL',NUME_ORDRE=1);
+       #DEPL2=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',OPERATION='EXTR',RESULTAT=RESU2,NOM_CHAM='DEPL',NUME_ORDRE=2);
+       DEPL=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',OPERATION='EXTR',RESULTAT=RESU2,NOM_CHAM='DEPL',NUME_ORDRE=nb);
+       
+       #IMPR_RESU(FORMAT='MED',UNITE=77,RESU=_F(MAILLAGE=MAIL,CHAM_GD=DEPL),);
+       ##os.system('ECHO copy fort.77 '+sortiepath+'nonlinedepl1.med');
+       ###os.system('copy fort.77 '+sortiepath+'nonlinedepl1.med');
+       ###DEFI_FICHIER(ACTION='LIBERER',UNITE=77,)
+       ###os.system('DEL fort.77 ');
+       ##
+       ##IMPR_RESU(FORMAT='MED',UNITE=78,RESU=_F(MAILLAGE=MAIL,CHAM_GD=DEPL2),);
+       ###os.system('ECHO copy fort.78 '+sortiepath+'nonlinedepl2.med');
+       ###os.system('copy fort.78 '+sortiepath+'nonlinedepl2.med');
+       ##DEFI_FICHIER(ACTION='LIBERER',UNITE=78,)
+       ##os.system('DEL fort.78 ');
+       #IMPR_RESU(FORMAT='MED',UNITE=79,RESU=_F(MAILLAGE=MAIL,CHAM_GD=DEPL),);
+       ##os.system('ECHO copy fort.79 '+sortiepath+'nonlinedeplfin.med');
+       ##os.system('copy fort.79 '+sortiepath+'nonlinedeplfin.med');
+       ##DEFI_FICHIER(ACTION='LIBERER',UNITE=79,)
+       ##os.system('DEL fort.79 ');
+       #
+       #
+       #IMPR_RESU(FORMAT='MED',UNITE=75,RESU=_F(MAILLAGE=MAIL,RESULTAT=RESU2,),);
+       ##os.system('ECHO copy fort.75 '+sortiepath+'nonlineresu.med');
+       ##os.system('copy fort.75 '+sortiepath+'nonlineresu.med');
+       ##DEFI_FICHIER(ACTION='LIBERER',UNITE=75,)
+       ##os.system('DEL fort.75 ');
+       
+       MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,DEFORME=_F(OPTION='TRAN',DEPL=DEPL,),);
+       IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=DEPL),);
+       EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+sortiepathlinux+"depl"+'.%d.med'%k,);
+       DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+       EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+       DETRUIRE(INFO=1,CONCEPT=_F(NOM=(RESU2,DEPL),));
+
+       
+
+FIN();

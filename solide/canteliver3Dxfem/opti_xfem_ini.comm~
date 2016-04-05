@@ -1,0 +1,312 @@
+## optimisation d un canteliver en 3D
+## fichier mis au point par frederic renou
+#################################################
+
+#Definition des constantes qui parametrise le calcul
+INCLUDE(UNITE=2);
+
+#Importation des bibliotheque
+from Macro.opti_xfem import XFEM_CALETEVAL,ponder,approx_sign,LVL_SAV
+
+
+DEBUT(PAR_LOT='NON');
+
+EXEC_LOGICIEL(LOGICIEL='cp fort.1 '+para['sortiepath']+'temp.temp',);
+EXEC_LOGICIEL(LOGICIEL='rm '+para['sortiepath']+'*')
+fopti=file('fort.3',"w");
+fopti.write('Fichier precisant les resultats de sortie de l optimisation\n');
+
+########################################################################
+##Définition des model de calcul et des materiaux
+########################################################################
+
+#lecture du maillage
+#attention les groupe mail suivant ne doivent pas etre utilise
+#enri;MAPtem;MAP;HEM;HEP;manoneg;MAFRONT;MAFRPO
+#les groupes noeud : LVLNEG;LVLBLOQ;NFISSU;TESTCHAR
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_PEAU_3D=_F(GROUP_MA=('Group_1','Group_2','Group_3'),),);
+#MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,DETR_GROUP_NO='LVLNEG','LVLBLOQ')
+##MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,DETR_GROUP_MA='enri','MAPtem','MAP','HEM','HEP','manoneg')
+#MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,DETR_GROUP_MA='manoneg')
+
+
+
+#creation du groupe de mail qui sera enrichi
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="enri",UNION=('Group_1v','Group_2v','Group_3v','VOLv')));
+
+
+#Creation du model de base
+MODEB=AFFE_MODELE(MAILLAGE=MAIL,AFFE=_F(GROUP_MA=('enri'),PHENOMENE='MECANIQUE',MODELISATION='3D',),);
+
+
+
+
+#########################################################################
+###Defninition de la level set initial
+#########################################################################
+
+##Cas ou la levelset est decrite par une fonction
+
+#recuperation de la geometrie
+CHGEOM = CREA_CHAMP ( OPERATION = 'EXTR' , TYPE_CHAM = 'NOEU_GEOM_R' ,NOM_CHAM = 'GEOMETRIE' , MAILLAGE = MAIL , INFO = 1 , )
+#definition de la fonction initial
+def f_ini(x,y,z):
+	#cas du cylindre vertical de centre xc,yc et de rayon R 
+	#xc=0.;
+	#yc=0.;
+	#R=1.;
+	#if (x-xc)**2+(y-yc)**2<R**2:
+		#return 1;
+	#return -1
+	#cas du demi plan 
+	#xc=0.;
+	#yc=0.;
+	#zc=0.;
+	#if x<xc:
+		#return 1;
+	#return -1
+		
+	#cas du cercle de centre xc,yc,zc,R
+	#xc=0;
+	#yc=0;
+	#zc=4;
+	#R=2;
+	#if ((x-xc)**2+(y-yc)**2+(z-zc)**2>R**2):
+		#if z>4.3:return 0;
+	#cas du plan
+	#if y<100: return -1;
+	#return 1;
+	#cas du carre
+	min=40;
+	max=160;
+	if y>min and y<max and x>min and x<max:
+		return 200;
+	else:
+		return -200;
+
+
+
+FINI= FORMULE(NOM_PARA= ('X','Y','Z'), VALE='f_ini(X,Y,Z)')
+CHFINI=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEB,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FINI));
+CHLVL=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFINI, CHAM_PARA=(CHGEOM,));
+
+CHZERO=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_R', MODELE=MODEB,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE=0.0));
+
+
+#Cas ou l'on utilise un champ exsitant
+#utilisation du champ decris a l unite 21
+#CHLVL=LIRE_CHAMP(TYPE_CHAM='NOEU_NEUT_R',UNITE=21,MAILLAGE=MAIL,NOM_MED='CHLVL___________________________',NOM_CMP_IDEM='OUI',)
+
+
+##Cas ou le champ de lvl set n'est pas decris sur le meme maillage que celui de calcul
+##en unite 21 mettre l ancien maillage
+##en unite 21 mettre le champ defini sur lancien maillage
+#ppMAIL=LIRE_MAILLAGE(FORMAT='MED',UNITE=21);
+#ppmode=AFFE_MODELE(MAILLAGE=ppMAIL,AFFE=_F(TOUT='OUI',PHENOMENE='MECANIQUE',MODELISATION='3D',),);
+#ppCHLVL=LIRE_CHAMP(TYPE_CHAM='NOEU_NEUT_R',UNITE=21,MAILLAGE=ppMAIL,NOM_MED='CHLVL___________________________',NOM_CMP_IDEM='OUI',)
+
+##Creation du fichier de resultat qui contient la LVLSET
+#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=ppCHLVL,),);
+#EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+'CHLVL.initial.maillageini.med',);#sauvegarde du fichier
+#DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+#EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+
+#ppCH2=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_DEPL_R',MODELE=ppmode, PROL_ZERO='OUI',
+				#ASSE=_F(TOUT='OUI', CHAM_GD=ppCHLVL,NOM_CMP=('X1',), NOM_CMP_RESU = ('DX',)), )
+#ppRESU=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='DEPL',AFFE=_F(CHAM_GD=ppCH2,MODELE=ppmode,INST=0),);
+
+
+#ppLRES=PROJ_CHAMP(RESULTAT=ppRESU,METHODE='ELEM',MODELE_1=ppmode,MODELE_2=MODETHER, NOM_CHAM='DEPL',
+				##VIS_A_VIS=(
+					##_F(GROUP_MA_1=('G_2D_5','G_2D_6','G_2D_3','G_2D_4'),GROUP_MA_2=('G_2D_5','G_2D_6','G_2D_3','G_2D_4'),),
+					##_F(GROUP_MA_1='G_2D_1',GROUP_MA_2='G_2D_1',))
+				#)
+				
+#CHLVLD=CREA_CHAMP(TYPE_CHAM='NOEU_DEPL_R',OPERATION='EXTR',RESULTAT=ppLRES,NOM_CHAM='DEPL');
+#CHLVL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODETHER, PROL_ZERO='OUI',
+				#ASSE=_F(TOUT='OUI', CHAM_GD=CHLVLD,NOM_CMP=('DX',), NOM_CMP_RESU = ('X1',)), )
+#DETRUIRE(INFO=1,CONCEPT=_F(NOM=(ppMAIL,ppmode,ppCHLVL,ppCH2,ppRESU,ppLRES,CHLVLD),),);
+
+
+
+##Reduction de la lvlset
+#CHLVLT2=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEMEC, 
+		#ASSE=(	_F(TOUT='OUI', CHAM_GD=CHLVL,CUMUL='OUI', COEF_R = 0.01),
+			#), )
+#DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVL,),),);
+#CHLVL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEMEC, 
+		#ASSE=(	_F(TOUT='OUI', CHAM_GD=CHLVLT2,CUMUL='OUI', COEF_R = 1),
+			#), )
+#DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVLT2,),),);
+
+
+#Creation du fichier de resultat qui contient la LVLSET
+LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHLVL,NOM="CHLVL.ini",ITER=-1,para=para);
+
+##########################################################################
+##insertion des donnees physiques
+##########################################################################
+INCLUDE(UNITE=4);
+
+
+##########################################################################
+##Creation de la fissure
+##########################################################################
+fiss=DEFI_FISS_XFEM(MODELE=MODEB,
+		TYPE_DISCONTINUITE = 'INTERFACE',
+		DEFI_FISS=_F(
+			CHAM_NO_LSN=CHLVL,
+			),
+		GROUP_MA_ENRI='enri',
+		CHAM_DISCONTINUITE  ="DEPL",
+		#INFO=1,
+		);
+
+##########################################################################
+##Reinitialisation du cham lvl
+##Modifie le CHLVL pour se raprocher de la fonction distance.
+##pour le moment on en est a un scalaire de la fonction distance
+fiss2=PROPA_CHLVL(MODELE=MODEB,DA_MAX=200,RAYON=200,FISS_PROP=fiss,ITERMAX=50,METHODE ="SIMPLEXE",INFO=1)
+#fiss3=PROPA_CHLVL(MODELE=MODEMEV,PAS=.5,DA_MAX=200,RAYON=100,FISS_PROP=fiss2,CH_VITN=CHDEPL,METHODE ="SIMPLEXE",INFO=2)
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVL,),),);
+CHLVL=CREA_CHAMP(OPERATION='EXTR',FISSURE=fiss2,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHLVL,),);
+fopti.write( "opti_xfem_ini:champ lisse et sauvegarde");
+
+
+
+
+#affectation de la table de critere
+TCRIT=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(0,1,),),
+				_F(PARA='critere0',LISTE_R=(1,1,),),
+	),);
+
+#affectation de la table de fnobjectif
+TAB_FNOB=CREA_TABLE(LISTE=(	_F(PARA='fnobject',LISTE_R=(0,),),
+				_F(PARA='nbiter',LISTE_I=(0,),),
+		),);
+
+
+#calcul et evalutation de la derive de forme
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+#toto=XFEM_CALETEVAL(MAIL=MAIL,MODEB=MODEB,NUMCAS=0,TBFNBAR=CO("tabsort"),VOLOBJ=1,TCRITOUT=CO("tabcrit0"),NBITER=0,CHDFO=CO("CHDFO"),XFEM_LVL=fiss2,para=para,
+		#CONTR=(
+			#_F(CHARGE=CHARJ1,TYPE="COMPLIANCE",CONTOBJ=1),
+			#_F(CHARGE=CHARJ2,TYPE="COMPLIANCE",CONTOBJ=1),
+		#))
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(toto),),);
+fopti=file('fort.3',"a");
+
+#Affichage des different critere
+tatemp=tabcrit0.EXTR_TABLE();
+for k in range(0, len(tatemp.critere)):
+	fopti.write( "lvltest: critere initial n%d valeur %f\n" %(k,tatemp.critere[k]));
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+fopti=file('fort.3',"a");
+
+
+#######Lissage du champs de derive de forme
+CHDFOL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEB,
+				ASSE=(	
+				_F(TOUT='OUI', CHAM_GD=CHDFO,CUMUL='NON'),
+				_F(GROUP_MA=para['GRN_DZ'], CHAM_GD=CHZERO,CUMUL='NON',),
+					), )
+LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHDFOL,NOM="CHDFOL",ITER=0,para=para);
+
+
+	
+#mise a jour de la table des fonction objectif
+TAB_FNOB=CALC_TABLE(reuse =TAB_FNOB,TABLE=TAB_FNOB,ACTION=_F(OPERATION='COMB',TABLE=tabsort, NOM_PARA=('nbiter') ) )
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(tabsort),),);
+tatemp=TAB_FNOB.EXTR_TABLE();
+objectif=tatemp.fnobject[0];
+fopti.write('opti iteration initial objectifm:%f \n'%(objectif))
+
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+fopti=file('fort.3',"a");
+
+###########################################################################
+#calcul avec un volume plein:
+###########################################################################
+MA=DEFI_MATERIAU (ELAS=_F(E=para['MAE'],NU=para['MANU'],RHO=para['RHO'],));
+#je ne suis pas sur de l utiliter de ceci
+CHMATE=AFFE_MATERIAU(MAILLAGE=MAIL,AFFE=_F(TOUT='OUI',MATER=MA),)
+
+i=0
+for cha in para['CATA_CHARG']:
+	i=i+1
+	RESU1=MECA_STATIQUE(MODELE=MODEB,CHAM_MATER=CHMATE,
+			EXCIT=(_F(CHARGE=cha)),);
+	
+	RESU1=CALC_ELEM(reuse =RESU1,
+			RESULTAT=RESU1,
+			#MODELE        = MOD_VISU,
+			CHAM_MATER=CHMATE,
+			OPTION=('EPSI_ELNO_DEPL','SIEF_ELNO_ELGA','EPSI_ELGA_DEPL','EQUI_ELGA_SIGM'));
+	RESU1=CALC_NO(reuse =RESU1,
+			RESULTAT=RESU1,
+			CHAM_MATER=CHMATE,
+			OPTION=('FORC_NODA'));
+	
+	
+				
+	freselas=file('fort.11',"a");
+	freselas.write( 60*"#"+"\n");
+	freselas.write( "resultat du calcul elastique pour le volume plein cas de charge n%d\n"%i);
+	freselas.write( 60*"#"+3*"\n");
+	freselas.close();
+	
+	depl2=POST_ELEM(MINMAX=_F(TOUT='OUI',
+				NOM_CHAM='DEPL',
+				RESULTAT=RESU1,
+				NOM_CMP=('DX','DY','DZ'),),);
+	IMPR_TABLE(TABLE=depl2,UNITE=11);
+	
+	cont=POST_ELEM(MINMAX=_F(TOUT='OUI',
+				RESULTAT=RESU1,
+				NOM_CHAM='EQUI_ELGA_SIGM',NOM_CMP='VMIS'));
+	IMPR_TABLE(TABLE=cont,UNITE=11);
+	
+	enrgelas=POST_ELEM(RESULTAT=RESU1,
+				TRAV_EXT=_F(),INFO=2);
+	IMPR_TABLE(TABLE=enrgelas,UNITE=11);
+	
+	#calcul a partir des champ elno
+	SIEFno=CREA_CHAMP(TYPE_CHAM='ELNO_SIEF_R', OPERATION='EXTR',RESULTAT=RESU1,NOM_CHAM='SIEF_ELNO_ELGA',);
+	EPSIno=CREA_CHAMP(TYPE_CHAM='ELNO_EPSI_R', OPERATION='EXTR',RESULTAT=RESU1,NOM_CHAM='EPSI_ELNO_DEPL',);
+	
+	###############################
+	##fonction opti vale compliance
+	FENR= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ','SIXX','SIXY','SIXZ','SIYY','SIYZ','SIZZ',),
+		VALE='(EPXX*SIXX+EPYY*SIYY+EPZZ*SIZZ+2*(EPXY*SIXY+EPYZ*SIYZ+EPXZ*SIXZ))');
+	
+	CHFENR=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='ELNO_NEUT_F', MODELE=MODEB,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=FENR));
+	
+	CHENRS=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELNO_NEUT_R', CHAM_F=CHFENR, CHAM_PARA=(SIEFno,EPSIno));
+	
+	CHENRS2=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',MODELE=MODEB, PROL_ZERO='OUI', ASSE=_F(TOUT='OUI', CHAM_GD=CHENRS,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+	
+	resucom=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_ELNO',AFFE=_F(CHAM_GD=CHENRS2,MODELE=MODEB,INST=1),);
+	
+	
+	compl1=POST_ELEM(MODELE=MODEB,RESULTAT=resucom, INTEGRALE=_F(TOUT='OUI',NOM_CHAM ='SIEF_ELNO',NOM_CMP ='SIXX'),);
+	tatemp=compl1.EXTR_TABLE();
+	comp=tatemp.INTE_SIXX[0];
+	
+	###############################
+	##fin opti vale compliance
+	#enregistrement de la valeur
+	fopti=file('fort.11',"a");
+	fopti.write( "lvl.dfo_compliance: Compliance :%f\n" %(comp));
+	fopti.close();
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(RESU1,depl2,cont,enrgelas,SIEFno,EPSIno,FENR,CHFENR,CHENRS,CHENRS2,resucom,compl1),),);
+
+FIN();

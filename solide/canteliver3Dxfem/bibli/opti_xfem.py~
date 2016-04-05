@@ -1,0 +1,782 @@
+#@ AJOUT opti_xfem Macro
+#bibliotheque de macro aster destine a calculer les derive de forme
+#ecris par frederic renou
+
+from Cata.cata import *
+from Accas import _F
+
+def lvl_sav_op(self,MAILLAGE,CHAM_GD,NOM,ITER,para,**args):
+	
+	ier=0
+	self.icmd=1
+	FORMULE		= self.get_cmd('FORMULE')
+	CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	CREA_RESU	= self.get_cmd('CREA_RESU')
+	POST_ELEM	= self.get_cmd('POST_ELEM')
+	DEFI_CONSTANTE	= self.get_cmd('DEFI_CONSTANTE')
+	
+	if ITER==-1:
+		IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAILLAGE,CHAM_GD=CHAM_GD,),);
+		EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+NOM+'.i.med',);
+		DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+		EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+	else :
+		IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAILLAGE,CHAM_GD=CHAM_GD,),);
+		EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+NOM+'.i.med',);
+		if ITER%para['freqsav']==0:
+			EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+NOM+'.%d.med'%ITER,);
+		DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+		EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+	
+	return ier;
+
+#sd_prod=cham_gd_sdaster,
+LVL_SAV= MACRO (nom="LVL_SAV", op=lvl_sav_op,
+	 fr="Sauvegarde du champ",
+	 MAILLAGE	=SIMP(statut='o',typ=maillage_sdaster),
+	 CHAM_GD	=SIMP(statut='o',typ=cham_gd_sdaster),
+	 NOM		=SIMP(statut='o',typ=str),
+	 ITER		=SIMP(statut='o',typ='I'),
+	 para		=SIMP(statut='o',typ=str,max='**'),
+	 );
+
+def lvl_conver_to_stl_op(self,NOM_IN,NOM_OUT,para,**args):
+	
+	ier=0
+	self.icmd=1
+	FORMULE		= self.get_cmd('FORMULE')
+	CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	CREA_RESU	= self.get_cmd('CREA_RESU')
+	POST_ELEM	= self.get_cmd('POST_ELEM')
+	DEFI_CONSTANTE	= self.get_cmd('DEFI_CONSTANTE')
+	
+	fopti=file('convert.geo',"w");
+	fopti.write( "Merge '"+para['sortiepath']+NOM_IN+"';\n");
+	fopti.write( "Plugin(CutMap).ExtractVolume=1;\n");
+	fopti.write( "Plugin(CutMap).iView=0;\n");
+	fopti.write( "Plugin(CutMap).Run;\n");
+	fopti.write( "Plugin(Skin).iView=1;\n");
+	fopti.write( "Plugin(Skin).Run;\n");
+	fopti.write( "PostProcessing.Format=5;\n");
+	fopti.write( "//l impression au format 3 (stl) directement bug\n");
+	fopti.write( "Save View[2] '"+para['sortiepath']+NOM_OUT+".msh';\n");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='gmsh',ARGUMENT= "-3 convert.geo");
+	EXEC_LOGICIEL(LOGICIEL='gmsh',ARGUMENT= "-3 "+para['sortiepath']+NOM_OUT+".msh -format stl -o "+para['sortiepath']+NOM_OUT);
+	EXEC_LOGICIEL(LOGICIEL='rm',ARGUMENT= " "+para['sortiepath']+NOM_OUT+".msh ");
+		
+	return ier;
+
+#sd_prod=cham_gd_sdaster,
+LVL_CONVER_TO_STL= MACRO (nom="LVL_CONVER_TO_STL", op=lvl_conver_to_stl_op,
+	 fr="conversion d un level set en stl",
+	 NOM_IN		=SIMP(statut='o',typ=str),
+	 NOM_OUT	=SIMP(statut='o',typ=str),
+	 para		=SIMP(statut='o',typ=str,max='**'),
+	 );
+
+
+#definition de la fonction barriere qui permet de ponderer les fonctions dans le cas de chargement multiple
+def lvl_barriere(x,para):
+	return x**para['nbar'];
+
+	
+#definition de la fonction barriere qui permet de ponderer les fonctions dans le cas de chargement multiple
+def lvl_der_barriere(x,para):
+	return para['nbar']*(x**(para['nbar']-1));
+
+#Reinitialisation du champ de lvlset
+def approx_sign(x):
+	if x<-0.0001: return -1
+	elif x<0.0001: return 0
+	return 1;
+
+
+
+######################################################################################
+#Lissage de la derive de forme
+######################################################################################
+def ponder(x,lcar,para):
+	if para['pondertype']=='BASIC':
+		if x<0: return 0
+		elif x<lcar: return 1
+		return (lcar/x);
+	if para['pondertype']=='TYPE1':
+		if x<-lcar: return 0
+		elif x<lcar: return 1
+		return (lcar/x);
+
+
+
+#Le but de cette fonction est de mettre a zero le champ de derive de forme sur les zones a preserver.
+def xfem_verif_lvl_ops(self,MAIL,CHLVLIN,GRMAPO,para,**args):
+	ier=0
+	self.icmd=1
+	FORMULE		= self.get_cmd('FORMULE')
+	CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	CREA_RESU	= self.get_cmd('CREA_RESU')
+	POST_ELEM	= self.get_cmd('POST_ELEM')
+	
+	return ier
+
+XFEM_VERIF_LVL= MACRO (nom="XFEM_VERIF_LVL", op=xfem_verif_lvl_ops,sd_prod=cham_gd_sdaster,
+	 fr="Calcul de la compliance",
+	 MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+	 CHLVLIN	=SIMP(statut='o',typ=cham_gd_sdaster),
+	 GRMAPO		=SIMP(statut='o',typ=grma,validators=NoRepeat(),max='**'),
+	 
+	 para		=SIMP(statut='o',typ=str,max='**'),
+	 );
+######################################################################################
+#calcul de la derive de forme pour la compliance 
+######################################################################################
+def xfem_dfo_compliance_prod(self,CHCOM,**args):
+	self.type_sdprod(CHCOM,cham_gd_sdaster)
+	return table_sdaster
+
+def xfem_dfo_compliance_ops(self,MAIL,MAILX,MODEX,MODEV,EXCIT,CHMATE,CHMATEV,NCAS,CHCOM,para,**args):
+	ier=0
+	self.icmd=1
+	FORMULE		= self.get_cmd('FORMULE')
+	CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	CREA_RESU	= self.get_cmd('CREA_RESU')
+	POST_ELEM	= self.get_cmd('POST_ELEM')
+	STAT_NON_LINE	= self.get_cmd('STAT_NON_LINE')
+	DEFI_LIST_REEL	= self.get_cmd('DEFI_LIST_REEL')
+	POST_CHAM_XFEM	= self.get_cmd('POST_CHAM_XFEM')
+	CALC_ELEM	= self.get_cmd('CALC_ELEM')
+	#STAT_NON_LINE	= self.get_cmd('STAT_NON_LINE')
+	#STAT_NON_LINE	= self.get_cmd('STAT_NON_LINE')
+	
+	self.DeclareOut('compl',self.sd)
+	self.DeclareOut('CHCOM',CHCOM)
+	
+	#Determination du volume en dehors de la forme
+	
+	#debug
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: entre dans la boucle");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+
+	############################################
+	#Fonction dfo_compliance
+	############################################
+
+	#intitialisation xfem
+	
+	__L_INST=DEFI_LIST_REEL(DEBUT=0.0,
+                      INTERVALLE=_F(JUSQU_A=1.0,
+                                    NOMBRE=1),);
+
+
+	###############
+	##Calcul elastique fonction de la level set
+	motscles={}	
+	motscles['EXCIT']=[]
+        for chargt in EXCIT   : motscles['EXCIT'].append(_F(CHARGE=chargt['CHARGE'],),)
+	
+	__RESUSTAT=STAT_NON_LINE(MODELE=MODEX,
+			CHAM_MATER=CHMATE,
+			COMP_ELAS=_F(RELATION='ELAS',
+					TOUT='OUI',),
+			INCREMENT=_F(LIST_INST=__L_INST),
+			INFO=1,
+			**motscles);
+
+	__RES_XFEM=POST_CHAM_XFEM(MAILLAGE_SAIN = MAIL,
+                        MAILLAGE_FISS = MAILX,
+                        MODELE        = MODEX,
+                        MODELE_VISU   = MODEV,
+                        RESULTAT      = __RESUSTAT,
+                        NOM_CHAM      = ('DEPL','SIEF_ELGA'),
+                        INFO          = 1);
+	
+        #pour gagner du tepms pour le debugage
+	#__RES_XFEM=LIRE_RESU(TYPE_RESU='EVOL_NOLI',UNITE=82,TOUT_ORDRE='OUI',
+			#FORMAT='MED',MODELE=MODEV,
+			#FORMAT_MED=(
+				#_F(NOM_CHAM_MED='.9000034DEPL____________________',NOM_CHAM='DEPL'),
+				#_F(NOM_CHAM_MED='.9000034SIEF_ELGA_______________',NOM_CHAM='SIEF_ELGA'),),
+			#INFO=1);
+			
+	__RES_XFEM=CALC_ELEM(reuse =__RES_XFEM,
+			RESULTAT=__RES_XFEM,
+			#MODELE        = MOD_VISU,
+			#GROUP_MA='MAFRPO',
+			CHAM_MATER=CHMATEV,
+			OPTION=('EPSI_ELGA_DEPL','EQUI_ELGA_SIGM'));
+	
+
+        #debug on saute l etape du calcul
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: etape 2\n");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+	IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAILX,RESULTAT=__RES_XFEM,NOM_CHAM=('DEPL','SIEF_ELGA','EPSI_ELGA_DEPL','EQUI_ELGA_SIGM'),),);
+	EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+'mecastat%d.i.med'%NCAS,);#sauvegarde du fichier
+	DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+	EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+        
+
+	#fin d un calcul elastique on indique les principaux resultats
+	freselas=file('fort.11',"a");
+	freselas.write( "resultat du calcul elastique pour le cas de charge %d\n"%(NCAS));
+	freselas.close();
+	
+	__depl2=POST_ELEM(MINMAX=_F(TOUT='OUI',
+                              NOM_CHAM='DEPL',
+			      RESULTAT=__RES_XFEM,
+                              NOM_CMP=('DX','DY','DZ'),),);
+	IMPR_TABLE(TABLE=__depl2,UNITE=11);
+	
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: depl2\n");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+
+	__cont=POST_ELEM(MINMAX=_F(GROUP_MA='MAP',
+                              RESULTAT=__RES_XFEM,
+                              NOM_CHAM='EQUI_ELGA_SIGM',NOM_CMP='VMIS'));
+	IMPR_TABLE(TABLE=__cont,UNITE=11);
+
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: cont\n");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	
+	
+
+
+
+	#F
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: debut siefnodeplno\n");
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	
+	##Calcul l energie elastique
+	
+	#la recuperation du travail exterieur plante lamentablement
+	#__RES_XFEM=CALC_NO(reuse =__RES_XFEM,
+		#RESULTAT=__RES_XFEM,
+		#CHAM_MATER=CHMATEV,
+		#OPTION=('FORC_NODA'));
+	
+	
+	#__enrgelas=POST_ELEM(RESULTAT=__RES_XFEM,
+				#TRAV_EXT=_F(),INFO=2);
+	#IMPR_TABLE(TABLE=__enrgelas,UNITE=11);
+
+	
+	###le calcul a partir des champs elga
+	#__SIEFga=CREA_CHAMP(TYPE_CHAM='ELGA_SIEF_R', OPERATION='EXTR',RESULTAT=__RES_XFEM,NOM_CHAM='SIEF_ELGA',);
+	#__EPSIga=CREA_CHAMP(TYPE_CHAM='ELGA_EPSI_R', OPERATION='EXTR',RESULTAT=__RES_XFEM,NOM_CHAM='EPSI_ELGA_DEPL',);
+	
+	################################
+	###fonction opti vale compliance
+	#__FENR= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ','SIXX','SIXY','SIXZ','SIYY','SIYZ','SIZZ',),
+		#VALE='(EPXX*SIXX+EPYY*SIYY+EPZZ*SIZZ+2*(EPXY*SIXY+EPYZ*SIYZ+EPXZ*SIXZ))');
+	
+	#__CHFENR=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='ELGA_NEUT_F', MODELE=MODEV,PROL_ZERO='OUI',
+		#AFFE=_F(GROUP_MA='MAP', NOM_CMP=('X1'),VALE_F=__FENR));
+	
+	#__CHENRS=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELGA_NEUT_R', CHAM_F=__CHFENR, CHAM_PARA=(__SIEFga,__EPSIga));
+
+	#__CHENRS2=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELGA_SIEF_R',MODELE=MODEV, PROL_ZERO='OUI', ASSE=_F(GROUP_MA='MAP', CHAM_GD=__CHENRS,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+
+	#__resucom=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_ELGA',AFFE=_F(CHAM_GD=__CHENRS2,MODELE=MODEV,INST=1),);
+
+
+	#__compl1=POST_ELEM(MODELE=MODEV,RESULTAT=__resucom, INTEGRALE=_F(GROUP_MA='MAP',NOM_CHAM ='SIEF_ELGA',NOM_CMP ='SIXX'),);
+	#tatemp=__compl1.EXTR_TABLE();
+	#comp=tatemp.INTE_SIXX[0];
+	#compl=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(NCAS,),),
+					#_F(PARA='critere',LISTE_R=(comp,),),
+		#),);
+	
+	
+	
+	__RES_XFEM=CALC_ELEM(reuse =__RES_XFEM,
+			RESULTAT=__RES_XFEM,
+			#MODELE        = MOD_VISU,
+			CHAM_MATER=CHMATEV,
+			OPTION=('EPSI_ELNO_DEPL','SIEF_ELNO_ELGA'));
+		
+	#calcul a partir des champ elno
+	__SIEFno=CREA_CHAMP(TYPE_CHAM='ELNO_SIEF_R', OPERATION='EXTR',RESULTAT=__RES_XFEM,NOM_CHAM='SIEF_ELNO_ELGA',);
+	__EPSIno=CREA_CHAMP(TYPE_CHAM='ELNO_EPSI_R', OPERATION='EXTR',RESULTAT=__RES_XFEM,NOM_CHAM='EPSI_ELNO_DEPL',);
+	
+	###############################
+	##fonction opti vale compliance
+	__FENR= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ','SIXX','SIXY','SIXZ','SIYY','SIYZ','SIZZ',),
+		VALE='(EPXX*SIXX+EPYY*SIYY+EPZZ*SIZZ+2*(EPXY*SIXY+EPYZ*SIYZ+EPXZ*SIXZ))');
+	
+	__CHFENR=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='ELNO_NEUT_F', MODELE=MODEV,PROL_ZERO='OUI',
+		AFFE=_F(GROUP_MA='MAP', NOM_CMP=('X1'),VALE_F=__FENR));
+	
+	__CHENRS=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELNO_NEUT_R', CHAM_F=__CHFENR, CHAM_PARA=(__SIEFno,__EPSIno));
+
+	__CHENRS2=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',MODELE=MODEV, PROL_ZERO='OUI', ASSE=_F(GROUP_MA='MAP', CHAM_GD=__CHENRS,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+
+	__resucom=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_ELNO',AFFE=_F(CHAM_GD=__CHENRS2,MODELE=MODEV,INST=1),);
+
+
+	__compl1=POST_ELEM(MODELE=MODEV,RESULTAT=__resucom, INTEGRALE=_F(GROUP_MA='MAP',NOM_CHAM ='SIEF_ELNO',NOM_CMP ='SIXX'),);
+	tatemp=__compl1.EXTR_TABLE();
+	comp=tatemp.INTE_SIXX[0];
+	compl=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(NCAS,),),
+					_F(PARA='critere',LISTE_R=(comp,),),
+		),);
+	
+	###############################
+	##fin opti vale compliance
+	#enregistrement de la valeur
+	fopti=file('fort.11',"a");
+	fopti.write( "lvl.dfo_compliance: Compliance :%f\n" %(comp));
+	fopti.close();
+	
+	
+
+	#debug
+	fopti=file('fort.3',"a");
+	fopti.write( "lvl.dfo_compliance: Compliance :%f\n" %(comp));
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+	
+	#calcul du champs
+	#__RESUSTAT=CALC_NO(reuse =__RESUSTAT,RESULTAT=__RESUSTAT,OPTION='EPSI_NOEU_DEPL',EXCIT=_F(CHARGE=CHARGE,),);
+	__EPSI=CREA_CHAMP(TYPE_CHAM='ELNO_EPSI_R', OPERATION='EXTR',RESULTAT=__RES_XFEM,NOM_CHAM='EPSI_ELNO_DEPL',);
+	
+	#################################
+	__FMULT1= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ'), 
+		VALE="para['Lambda']*(EPXX+EPYY+EPZZ)**2+para['Mu']*2.*(EPXX*EPXX+EPYY*EPYY+EPZZ*EPZZ+2*(EPXY+EPXZ+EPYZ)**2)")
+
+	__CHFMU1=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='ELNO_NEUT_F', MODELE=MODEV,PROL_ZERO='OUI',
+		AFFE=_F(GROUP_MA='MAFRPO', NOM_CMP=('X1'),VALE_F=(__FMULT1)));
+	
+	#CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI,__CHYOUNG));
+	CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='ELNO_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI),INFO=1);
+	
+	#IMPR_CO(CONCEPT=_F(NOM=CHCOM));
+	
+	##calcul du champs
+	#__RESUSTAT=CALC_NO(reuse =__RESUSTAT,RESULTAT=__RESUSTAT,OPTION='EPSI_NOEU_DEPL',EXCIT=_F(CHARGE=CHARGE,),);
+	#__EPSI=CREA_CHAMP(TYPE_CHAM='NOEU_EPSI_R', OPERATION='EXTR',RESULTAT=__RESUSTAT,NOM_CHAM='EPSI_NOEU_DEPL',);
+	
+	##################################
+	#__FMULT1= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ'), 
+		#VALE="para['Lambda']*(EPXX+EPYY+EPZZ)**2+para['Mu']*2.*(EPXX*EPXX+EPYY*EPYY+EPZZ*EPZZ+2*(EPXY+EPXZ+EPYZ)**2)")
+
+	#__CHFMU1=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEC,PROL_ZERO='OUI',
+		#AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=__FMULT1));
+	
+	##CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI,__CHYOUNG));
+	#CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI));
+	
+
+	############################################
+	#Fin dfo_compliance
+	############################################
+		
+	return ier
+
+XFEM_DFO_COMPLIANCE= MACRO (nom="XFEM_DFO_COMPLIANCE", op=xfem_dfo_compliance_ops,sd_prod=xfem_dfo_compliance_prod,
+	 fr="Calcul de la compliance",
+	 MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+	 MAILX		=SIMP(statut='o',typ=maillage_sdaster),
+	 MODEX		=SIMP(statut='o',typ=modele_sdaster),
+	 MODEV		=SIMP(statut='o',typ=modele_sdaster),
+	 NCAS		=SIMP(statut='o',typ='I'),
+	 EXCIT           =FACT(statut='o',max='**',
+		CHARGE          =SIMP(statut='o',typ=(char_meca,char_cine_meca))),
+	 CHMATE		=SIMP(statut='o',typ=cham_mater),
+	 CHMATEV	=SIMP(statut='o',typ=cham_mater),
+	 CHCOM		=SIMP(statut='o',typ=CO),
+	 para		=SIMP(statut='o',typ=str,max='**'),
+	 );
+
+######################################################################################
+#calcul de la derive de forme pour la compliance 
+#Mais retourne comme fonction objectif le max des contrainte
+######################################################################################
+#def lvl_dfo_compliancemaxc_prod(self,CHCOM,**args):
+	#self.type_sdprod(CHCOM,cham_gd_sdaster)
+	#return table_sdaster
+
+#def lvl_dfo_compliancemaxc_ops(self,MAIL,MODEMEC,CHARGE,CHMATE,NCAS,CHCOM,para,**args):
+	#ier=0
+	#self.icmd=1
+	#FORMULE		= self.get_cmd('FORMULE')
+	#CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	#CREA_RESU	= self.get_cmd('CREA_RESU')
+	#POST_ELEM	= self.get_cmd('POST_ELEM')
+
+	
+	#self.DeclareOut('compl',self.sd)
+	#self.DeclareOut('CHCOM',CHCOM)
+
+	
+	################
+	###Calcul elastique fonction de la level set
+	##__RESUSTAT=MECA_STATIQUE(MODELE=MODEMEC,CHAM_MATER=__CHMATE,EXCIT=_F(CHARGE=m['CHARGE'],),OPTION=('EPSI_ELNO_DEPL','SIEF_ELNO_ELGA','EPSI_NOEU_DEPL'),);
+	#__RESUSTAT=MECA_STATIQUE(MODELE=MODEMEC,CHAM_MATER=CHMATE,EXCIT=_F(CHARGE=CHARGE,));
+	#__RESUSTAT=CALC_ELEM(reuse =__RESUSTAT,MODELE=MODEMEC,RESULTAT=__RESUSTAT,
+		#OPTION=('EQUI_ELGA_SIGM','EPSI_ELNO_DEPL'),
+		               #EXCIT=_F(CHARGE=CHARGE,),);
+
+	#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,RESULTAT=__RESUSTAT,NOM_CHAM=('EQUI_ELGA_SIGM','DEPL'),),);
+	#EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+'mecastat%d.i.med'%NCAS,);#sauvegarde du fichier
+	#DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+	#EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+
+	
+	
+	
+	##calcul de la valeur
+	#__compl1=POST_ELEM(MINMAX=_F(TOUT='OUI',RESULTAT=__RESUSTAT,NOM_CHAM='EQUI_ELGA_SIGM',NOM_CMP='VMIS'),);
+	
+	#IMPR_TABLE(TABLE=__compl1,INFO=2);
+	
+	#tatemp=__compl1.EXTR_TABLE();
+	#maxvm=tatemp.MAX_VMIS[0];
+	#compl=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(NCAS,),),
+					#_F(PARA='critere',LISTE_R=(maxvm,),),
+		#),);
+	
+	################################
+	###fin opti vale compliance
+	
+	
+
+	##debug
+	#fopti=file('fort.3',"a");
+	#fopti.write( "lvl.dfo_compliance_maxc: Valeur max de VMIS  :%f\n" %(maxvm));
+	#fopti.close();
+	#EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+	
+	##calcul du champs
+	#__RESUSTAT=CALC_NO(reuse =__RESUSTAT,RESULTAT=__RESUSTAT,OPTION='EPSI_NOEU_DEPL',EXCIT=_F(CHARGE=CHARGE,),);
+	#__EPSI=CREA_CHAMP(TYPE_CHAM='NOEU_EPSI_R', OPERATION='EXTR',RESULTAT=__RESUSTAT,NOM_CHAM='EPSI_NOEU_DEPL',);
+	
+	##################################
+	###fonction optisige
+	#__FMULT1= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ'), 
+	 	#VALE="para['Lambda']*(EPXX+EPYY+EPZZ)**2+para['Mu']*2.*(EPXX*EPXX+EPYY*EPYY+EPZZ*EPZZ+2*(EPXY+EPXZ+EPYZ)**2)")
+	##__FMULT1= FORMULE(NOM_PARA= ('EPXX', 'EPYY', 'EPZZ','EPYZ', 'EPXY', 'EPXZ','X1'), 
+	##	VALE="(X1)*para['Lambda']*(EPXX+EPYY+EPZZ)**2+(X1)*para['Mu']*2.*(EPXX**2+EPYY**2+EPZZ**2+2.*(EPXY**2+EPXZ**2+EPYZ**2))")
+
+
+	#__CHFMU1=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODEMEC,PROL_ZERO='OUI',
+		#AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE_F=__FMULT1));
+	
+	##CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI,__CHYOUNG));
+	#CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=__CHFMU1, CHAM_PARA=(__EPSI));
+	
+	#############################################
+	##Fin dfo_compliance
+	#############################################
+	#return ier
+
+#LVL_DFO_COMPLIANCE_MAXC= MACRO (nom="LVL_DFO_COMPLIANCE_MAXC", op=lvl_dfo_compliancemaxc_ops,sd_prod=lvl_dfo_compliance_prod,
+	 #fr="Calcul de la compliance",
+	 #MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+	 #MODEMEC	=SIMP(statut='o',typ=modele_sdaster),
+	 #NCAS		=SIMP(statut='o',typ='I'),
+	 #CHARGE          =SIMP(statut='o',typ=(char_meca,char_cine_meca)),
+	 #CHMATE		=SIMP(statut='o',typ=cham_mater),
+	 #CHCOM		=SIMP(statut='o',typ=CO),
+	 #para		=SIMP(statut='o',typ=str,max='**'),
+	 #);
+
+
+#calcul et evaluation de la deriver de forme
+#retourne un champs de scalaire qui contien la derive et 
+#une table qui contient l etat de chaque contrainte
+#une table qui contien la valeur de la fonction a optimiser
+def xfem_caleteval_prod(self,MAIL,MODEB,TBFNBAR,VOLOBJ,TCRITOUT,NBITER,CONTR,XFEM_LVL,CHDFO,para,**args):
+	self.type_sdprod(TCRITOUT,table_sdaster)
+	self.type_sdprod(CHDFO,cham_gd_sdaster)
+	self.type_sdprod(TBFNBAR,table_sdaster)
+	return cham_gd_sdaster
+
+def xfem_caleteval(self,MAIL,MODEB,TBFNBAR,VOLOBJ,TCRITOUT,NBITER,CONTR,XFEM_LVL,CHDFO,para,**args):
+	ier=0
+	self.icmd=1
+	FORMULE		= self.get_cmd('FORMULE')
+	CREA_CHAMP	= self.get_cmd('CREA_CHAMP')
+	CREA_RESU	= self.get_cmd('CREA_RESU')
+	POST_ELEM	= self.get_cmd('POST_ELEM')
+	
+	self.DeclareOut('TCRITOUT',TCRITOUT)
+	self.DeclareOut('tab_fb',TBFNBAR)
+	self.DeclareOut('notused',self.sd)
+	self.DeclareOut('CHDFO',CHDFO)
+	
+	
+	fopti=file('fort.3',"a");
+	fopti.write('Debut de la fonction cal et eval nbiter:%d\n'%NBITER);
+	
+	#definition de la fonction barriere qui permet de ponderer les fonctions dans le cas de chargement multiple
+	def lvl_barriere(x,para):
+		return x**para['nbar'];
+	
+		
+	#definition de la fonction barriere qui permet de ponderer les fonctions dans le cas de chargement multiple
+	def lvl_der_barriere(x,para):
+		if para['nbar']==1:
+			return 1;
+		return para['nbar']*(x**(para['nbar']-1));
+
+	
+	
+	#affectation de la table de critere qui contient les resultats
+	__CRITOUT=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(0,1,),),
+					_F(PARA='critere',LISTE_R=(1,1,),),
+		),);
+	
+	#tab_crit=CALC_TABLE(reuse=tab_crit,TABLE=tab_crit,ACTION=_F(OPERATION='COMB',TABLE=TCRITINI,NOM_PARA=('casdecharge') ) )
+	##je n ai pas zero dans ma table mais ce nest pas grave
+	
+	IMPR_TABLE(TABLE=__CRITOUT);
+	funcobj=0;
+		
+
+
+	#association des groupes du mailage
+        __CHLVL=CREA_CHAMP(OPERATION='EXTR',FISSURE=XFEM_LVL,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+	#creation d un groupe contenant les noeuds hors du domaine
+	__CHLVLT=__CHLVL.EXTR_COMP('X1',[],1);
+	#print CHLVLT.valeurs;
+	#print CHLVLT.noeud;
+	motscle={};
+	motscle['NOEUD']=[]
+	max=len(__CHLVLT.valeurs);
+	for i in range(max):
+		if __CHLVLT.valeurs[i]<0:
+			motscle['NOEUD'].append('N'+str(__CHLVLT.noeud[i]));
+	#print motscle['NOEUD'];
+	MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_NO=
+		(_F(NOM="LVLNEG",**motscle),
+		_F(NOM="LVLBLOQ",DIFFE=('LVLNEG',para['GRN_APPUIS'])),
+		_F(NOM="TESTCHAR",INTERSEC=('LVLNEG',para['GRN_CHAR'])),
+#		_F(NOM="TESTCHAR",DIFFE=('LVLNEG',para['GRN_CHAR'])),
+		));
+	MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="manoneg",OPTION='APPUI_LACHE',GROUP_NO='LVLNEG'));
+	
+	#test si une maille de la surface exterieur charge est negative
+	print "test si le groupe testchar a bien ete cree"
+	liste=MAIL.LIST_GROUP_NO()
+	print liste
+	liste2=[];
+	for a in liste:
+		liste2.append(a[0])
+	print liste2
+	assert ("TESTCHAR" in liste2)==False, "Erreur toutes les charges ne sont pas reprisent"
+	print "ok c est bon"
+
+	###construction du model XFEM
+	__MODXFEM=MODI_MODELE_XFEM(MODELE_IN=MODEB,FISSURE=XFEM_LVL,CONTACT='NON');
+	__MVNEG=AFFE_CHAR_MECA(MODELE=MODEB,DDL_IMPO=_F(DX=0.0,DY=0.0,DZ=0.0,GROUP_NO='LVLBLOQ'),);
+	__CHARXFEM=AFFE_CHAR_MECA(MODELE=__MODXFEM,LIAISON_XFEM='OUI',);
+
+	#Creation des elements de post traitement
+	__MA_XFEM=POST_MAIL_XFEM(MODELE=__MODXFEM,
+			MAILLAGE_SAIN=MAIL);
+	__MA_XFEM=DEFI_GROUP(reuse=__MA_XFEM,MAILLAGE=__MA_XFEM,
+		CREA_GROUP_MA=(
+		#_F(NOM="tout",TOUT='OUI'),
+		_F(NOM="MAPtem",DIFFE=('enri','HEM','manoneg')),
+		_F(NOM="MAP",UNION=('HEP','MAPtem')),
+		_F(NOM="MAFRONT",OPTION='APPUI_LACHE',GROUP_NO='NFISSU'),
+		_F(NOM="MAFRPO",INTERSEC=('HEP','MAFRONT')),
+		));
+	
+	__MA=DEFI_MATERIAU (ELAS=_F(E=para['MAE'],NU=para['MANU'],RHO=para['RHO'],));
+	__CHMATB=AFFE_MATERIAU(MAILLAGE=MAIL,AFFE=_F(TOUT='OUI',MATER=__MA,),);
+	__CHMATV=AFFE_MATERIAU(MAILLAGE=__MA_XFEM,AFFE=_F(TOUT='OUI',MATER=__MA,),);
+	
+	__MODEV=AFFE_MODELE(MAILLAGE=__MA_XFEM,
+			AFFE=_F(TOUT='OUI',
+				PHENOMENE='MECANIQUE',
+				MODELISATION='3D',),) ;
+
+
+        #creation d un cham valant zero partout pour sommer les champs unitaires
+	#__chdt=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=__MODEV, 
+			#ASSE=(	_F(TOUT='OUI', CHAM_GD=CHLVL,CUMUL='OUI', COEF_R = 0),
+				#), )
+	__chdt=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='ELNO_NEUT_R', MODELE=__MODEV,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE=0.));
+	compteur=0;
+	
+	#sauvegarde de chaque derive de forme
+	__CHTEMP=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',MODELE=__MODEV, PROL_ZERO='OUI',
+		ASSE=_F(TOUT='OUI', CHAM_GD=__chdt,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+	__fRESUS=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_NOEU',AFFE=_F(CHAM_GD=__CHTEMP,MODELE=__MODEV,INST=compteur),);
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__CHTEMP),),);	
+
+	#recuperation des differents type de contrainte
+	for m in CONTR:
+		compteur=compteur+1;
+		fopti.write('lvl.caleteval: Contrainte n:%d \n'%compteur);
+
+		fopti.close();
+		EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+		fopti=file('fort.3',"a");
+
+		
+		fopti.close();
+		CHDFOI=CO("CHDFOI");#champ de deriver de forme en cour d iteration
+		if m['TYPE']=="COMPLIANCE":
+			__compl=XFEM_DFO_COMPLIANCE(MAIL=MAIL,MAILX=__MA_XFEM,MODEX=__MODXFEM,MODEV=__MODEV,NCAS=compteur,
+				EXCIT=(
+					_F(CHARGE=m['CHARGE']),_F(CHARGE=__MVNEG),_F(CHARGE=__CHARXFEM)),
+				CHMATE=__CHMATB,CHMATEV=__CHMATV,CHCOM=CHDFOI,para=para);
+		#elif m['TYPE']=="COMPLIANCE_MAXC":
+			#__compl=LVL_DFO_COMPLIANCE_MAXC(MAIL=MAIL,MODEMEC=MODEMEC,CHARGE=m['CHARGE'],CHMATE=__CHMATE,NUMCAS=compteur,CHCOM=CHDFOI,para=para);
+		
+		fopti=file('fort.3',"a");
+		__CRITOUT=CALC_TABLE(reuse =__CRITOUT,TABLE=__CRITOUT,ACTION=_F(OPERATION='COMB',TABLE=__compl,NOM_PARA=('casdecharge') ) )
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__compl),),);
+		
+
+		tatemp=__CRITOUT.EXTR_TABLE();
+		contval=tatemp.critere[compteur]
+		fopti.write( "lvl.caleteval: Contrainte de la table:%g \n" %contval);			
+					
+		fopti.close();
+		EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+		fopti=file('fort.3',"a");
+
+
+		#ecriture du concept dans le resultat
+		__CHTEMP=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',MODELE=__MODEV, PROL_ZERO='OUI', ASSE=_F(TOUT='OUI', CHAM_GD=CHDFOI,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+		__fRESUS=CREA_RESU(reuse=__fRESUS,OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_NOEU',AFFE=_F(CHAM_GD=__CHTEMP,MODELE=__MODEV,INST=compteur),);
+		IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=__MA_XFEM,RESULTAT=__fRESUS,NOM_CHAM=('SIEF_NOEU',),),);
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__CHTEMP),),);
+		EXEC_LOGICIEL(LOGICIEL='cp fort.81 '+para['sortiepath']+'mecadfocomp.i.med',);#sauvegarde du fichier
+		DEFI_FICHIER(ACTION='LIBERER',UNITE=81,)
+		EXEC_LOGICIEL(LOGICIEL='rm fort.81 ')
+
+		##assemblage des derives de forme pour le calcul de la derive unitaire
+		cibcom=contval/m['CONTOBJ'];
+		barcom=lvl_barriere(x=cibcom,para=para);
+		funcobj=barcom+funcobj;
+		coefcom=lvl_der_barriere(x=cibcom,para=para);
+		fopti.write( "lvl.caleteval: bariere de la contrainte %g\n" %barcom);
+		fopti.write( "lvl.caleteval: coef de la contrainte %g\n" %coefcom);
+
+		fopti.close();
+		EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+		fopti=file('fort.3',"a");
+	
+		
+		__chdt1=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_NEUT_R',MODELE=__MODEV,PROL_ZERO='OUI',
+				ASSE=(	_F(GROUP_MA='MAFRPO', CHAM_GD=__chdt,CUMUL='OUI', COEF_R = 1),
+					), )
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__chdt),),);
+		__chdt=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_NEUT_R',MODELE=__MODEV, PROL_ZERO='OUI',
+			ASSE=(	
+				#_F(TOUT='OUI', CHAM_GD=__chdt1,CUMUL='OUI', COEF_R = 1),
+				_F(GROUP_MA='MAFRPO', CHAM_GD=__chdt1,CUMUL='OUI', COEF_R = 1),
+				_F(GROUP_MA='MAFRPO', CHAM_GD=CHDFOI,CUMUL='OUI', COEF_R = coefcom)
+				), INFO=1)
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__chdt1,CHDFOI),),);
+		LVL_SAV(MAILLAGE=__MA_XFEM,CHAM_GD=__chdt,NOM="CHDFOncontr%d.med"%compteur,ITER=NBITER,para=para);
+	
+	#projection du cham __chdt sur le maillage mail
+	__CHTEMP=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='ELNO_SIEF_R',MODELE=__MODEV, PROL_ZERO='OUI', ASSE=_F(TOUT='OUI', CHAM_GD=__chdt,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+	__RESUAP=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_ELNO',AFFE=_F(CHAM_GD=__CHTEMP,MODELE=__MODEV,INST=compteur),);
+	
+	__RESUP=PROJ_CHAMP(RESULTAT = __RESUAP,MODELE_1=__MODEV,MODELE_2=MODEB,
+		TYPE_CHAM='NOEU',NOM_CHAM='SIEF_ELNO',ALARME='NON',INFO=1,
+		VIS_A_VIS=(_F(GROUP_MA_1='MAFRPO',TOUT_2='OUI')))
+	__chdtp=CREA_CHAMP(OPERATION='EXTR',TYPE_CHAM='NOEU_SIEF_R',RESULTAT=__RESUP,NOM_CHAM='SIEF_ELNO');
+	__chdtpn=CREA_CHAMP(OPERATION='ASSE',TYPE_CHAM='NOEU_NEUT_R',MAILLAGE=MAIL,ASSE=_F(TOUT='OUI',CHAM_GD=__chdtp,NOM_CMP=('SIXX'),NOM_CMP_RESU=('X1')));
+	#__chdtpnd=CREA_CHAMP(OPERATION='DISC',TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEB,CHAM_GD=__chdtpn,);
+	
+	LVL_SAV(MAILLAGE=MAIL,CHAM_GD=__chdtpn,NOM="CHDFOPROJ.med",ITER=NBITER,para=para);
+
+	
+############################################
+#fonction DFO_VOLUME
+#############################################
+	__MASS_3D=POST_ELEM(MODELE=__MODEV,CHAM_MATER=__CHMATV, MASS_INER=_F(GROUP_MA='MAP',),);
+	tatemp=__MASS_3D.EXTR_TABLE();
+	voli=tatemp.MASSE[0];
+	fopti.write( "lvl.caleteval: masse:  %g\n" %voli);
+	
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	fopti=file('fort.3',"a");
+	
+	__tab_temp=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(0,),),
+					_F(PARA='critere',LISTE_R=(voli,),),
+		),);
+	TCRITOUT=CALC_TABLE(TABLE=__CRITOUT,ACTION=_F(OPERATION='COMB',TABLE=__tab_temp, NOM_PARA=('casdecharge') ) )
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(__tab_temp),),);
+		
+	__CHVOL=CREA_CHAMP( OPERATION= 'AFFE',TYPE_CHAM='NOEU_NEUT_R' , MODELE=MODEB,
+			AFFE= (
+				_F(TOUT='OUI', NOM_CMP='X1', VALE=1.,),
+			));
+
+############################################
+#fin DFO_VOLUME
+#############################################
+        MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,DETR_GROUP_NO=_F(NOM=('LVLNEG','LVLBLOQ')))
+	MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,DETR_GROUP_MA=_F(NOM=('manoneg')))
+	
+	
+	
+	fopti.write( "lvl.caleteval: coef du volume -%g\n" %para['lag']);
+	CHDFO=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEB, 
+		ASSE=(	_F(TOUT='OUI', CHAM_GD=__CHVOL,CUMUL='OUI', COEF_R = -para['lag']),
+			_F(TOUT='OUI', CHAM_GD=__chdtpn,CUMUL='OUI', COEF_R = 1)
+			), )
+
+
+	#valeur de la fonction objectif
+	tatemp=TCRITOUT.EXTR_TABLE();
+	funcobj=(funcobj+para['lag']*tatemp.critere[0]);
+
+	#fopti.write( "opti.caleteval: La fonction objectif vaut %g\n" %guncobj);
+	tab_fb=CREA_TABLE(LISTE=(	_F(PARA='fnobject',LISTE_R=(funcobj,),),
+				_F(PARA='nbiter',LISTE_I=(NBITER,),),
+		),);
+	
+	fopti.write('lvl.caleteval:Fin de la fonction cal et eval funcobj:%g\n'%guncobj);
+
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	
+	##ATTEntion cree la table TCRITOUT
+	return ier
+
+XFEM_CALETEVAL= MACRO (nom="XFEM_CALETEVAL", op=xfem_caleteval,sd_prod=xfem_caleteval_prod,
+	fr="Calcul de la compliance",
+	MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+	MODEB		=SIMP(statut='o',typ=modele_sdaster),
+	TBFNBAR		=SIMP(statut='o',typ=CO),
+	VOLOBJ		=SIMP(statut='o',typ='R'),
+	
+	TCRITOUT	=SIMP(statut='o',typ=CO),
+	NBITER		=SIMP(statut='o',typ='I'),
+	CONTR           =FACT(statut='o',max='**',
+		CHARGE          =SIMP(statut='o',typ=(char_meca,char_cine_meca)),
+		TYPE     =SIMP(statut='o',typ='TXM',defaut="COMPLIANCE",into=("COMPLIANCE","COMPLIANCE_MAXC")),
+		CONTOBJ		=SIMP(statut='o',typ='R'),
+        ),
+	XFEM_LVL	=SIMP(statut='o',typ=fiss_xfem),
+	CHDFO		=SIMP(statut='o',typ=CO),
+	para		=SIMP(statut='o',typ=str,max='**'),
+	);
+
+
+#MAIL,MODEMEC,NCAS,MATER,TBFNBAR,TCRITINI,TCRITOUT,NBITER,CHAR_1,CHLVL,CHDFO,para,**args

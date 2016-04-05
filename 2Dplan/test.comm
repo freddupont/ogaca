@@ -1,0 +1,14 @@
+DEBUT(PAR_LOT="NON")
+ACIER=DEFI_MATERIAU(ELAS=_F(E=210000000000.0,
+                            NU=0.3,
+                            RHO=7800.0,),);
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+
+MODE=AFFE_MODELE(MAILLAGE=MAIL,
+                 AFFE=_F(TOUT='OUI',
+                         PHENOMENE='MECANIQUE',
+                         MODELISATION='DKT',),);
+
+
+FIN();

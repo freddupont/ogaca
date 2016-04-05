@@ -1,0 +1,2724 @@
+
+ Version séquentielle de Code_aster 
+==========================================
+==========================================
+# MODIF  DATE 19/05/2011   AUTEUR DELMAS J.DELMAS 
+# TITRE COUPLAGE ASTER_HOMARD - CAS 3D EN HEXAEDRES
+# zzzz121e.para = tps_job 60 mem_job 32Mo ncpus 1 liste_test R
+#            CONFIGURATION MANAGEMENT OF EDF VERSION
+# ======================================================================
+# COPYRIGHT (C) 1991 - 2011  EDF R&D                  WWW.CODE-ASTER.ORG
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM; IF NOT, WRITE TO EDF R&D CODE_ASTER,
+#    1 AVENUE DU GENERAL DE GAULLE, 92141 CLAMART CEDEX, FRANCE.
+# ======================================================================
+# RESPONSABLE GNICOLAS G.NICOLAS
+# Attention : Ceci est un test de non regression et non pas d'evaluation
+# de l'adaptation de maillage.
+# . Cas d'un parallelepipede decoupe en 9 hexaedres, en degre 1
+#
+#                29            30            31           32
+#                  ---------------------------------------.
+#                 /            /            /            /.
+#                /            /            /            / .
+#             25----------------------------------------  .
+#              /            /            /            /.  .
+#             /            /            /            / .  .
+#          21----------------------------------------  .  .
+#           /            /            /            /.  .  .
+#          /            /            /            / .  .  .16
+#       17---------------------------------------.  .  . /
+#         .            .            .            .  .  ./
+#         .            .            .            .  .  .12
+#         .            .            .            .  . /
+#         .            .            .            .  ./
+#         .            .            .            .  .8
+#         .            .            .            . /
+#         .            .            .            ./
+#         ---------------------------------------.
+#         1            2            3            4
+#
+# NOMBRE DE NOEUDS : 32
+#
+# NOMBRE DE MAILLES : 39
+#                   QUAD4 : 30
+#                   HEXA8 :  9
+#
+# NOMBRE DE GROUPES DE NOEUDS : 2
+#                   B : NO4(6.,0.,0.)
+#                   A : NO32(6.,6.,2.)
+#
+# NOMBRE DE GROUPES DE MAILLES : 5
+#                   X_0     : 3  les quadrangles de la face x=0
+#                   X_MAX   : 3  les quadrangles de la face x=6
+#                   Z_MI_MA : 18 les quadrangles de la face inferieure, z=0,
+#                                et de la face superieure, z=2
+#                   Y_MI_MA : 6  les quadrangles de la face avant, y=0, et
+#                                de la face arriere, y=6
+#                   VOLUME  : 9  les hexaedres du volume
+#
+# . La face x=0 est encastree
+# . On appuie, vers l'interieur, sur la face x=6
+# . On est en presence de gravite
+# Remarque : la gravite est inclinee par rapport aux axes pour casser la
+#            symetrie du probleme. Cela permet d'assurer un extremum unique
+#            pour l'indicateur d'erreur et donc une selection identique de
+#            la maille a raffiner, quelle que soit la machine d'execution
+#
+# . Information
+# . 2 adaptations avec des variantes
+
+DEBUT(CODE=_F(NOM='ZZZZ121E',
+              NIV_PUB_WEB='INTERNET',
+              VISU_EFICAS='OUI',),
+      DEBUG=_F(SDVERI='OUI',),);
+
+#
+# 1. DEFINITION DU MATERIAU
+
+MATER2=DEFI_MATERIAU(ELAS=_F(E=220000.,
+                             NU=0.33,
+                             RHO=8300.,
+                             ALPHA=16.E-6,),);
+
+#
+#
+# 2. LECTURE DU MAILLAGE ET TEST DE LA MACRO SUR L'INFORMATION
+
+M00=LIRE_MAILLAGE(FORMAT='MED',
+                  NOM_MED='3x3___________________________00',);
+
+#
+
+# Attention : le test d'interpenetration peut etre long (voir la documentation).
+MACR_INFO_MAIL(MAILLAGE=M00,
+               NOMBRE='OUI',
+               QUALITE='OUI',
+               CONNEXITE='OUI',
+               TAILLE='OUI',
+               INTERPENETRATION='OUI',
+               PROP_CALCUL='OUI',);
+
+#
+# 3. CALCUL SUR LE MAILLAGE 00
+# 3.1. MODELE MECANIQUE
+
+MODE00=AFFE_MODELE(MAILLAGE=M00,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+M00=MODI_MAILLAGE(reuse =M00,
+                  MAILLAGE=M00,
+                  ORIE_PEAU_3D=_F(GROUP_MA=('X_0','X_MAX','Y_MI_MA','Z_MI_MA',),),);
+
+#
+# 3.2. MISE EN PLACE DU MATERIAU
+
+MATE00=AFFE_MATERIAU(MAILLAGE=M00,
+                     AFFE=_F(TOUT='OUI',
+                             MATER=MATER2,),);
+
+#
+# 3.3. CHARGEMENTS
+G = 9.81;
+
+PRE = -300000.0;
+
+PRES_0 = 1e-14;
+
+
+#
+
+CHAR00=AFFE_CHAR_MECA(MODELE=MODE00,
+                      PESANTEUR=_F(GRAVITE=G,
+                                   DIRECTION=(4.,6.,-1.,),),
+                      FACE_IMPO=_F(GROUP_MA='X_0',
+                                   DX=0.,
+                                   DY=0.,
+                                   DZ=0.,),
+                      PRES_REP=(_F(GROUP_MA='X_MAX',
+                                   PRES=PRE,),
+                                _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                   PRES=PRES_0,),),);
+
+#
+# 3.4. RESOLUTION
+
+RESU00=MECA_STATIQUE(MODELE=MODE00,
+                     CHAM_MATER=MATE00,
+                     EXCIT=_F(CHARGE=CHAR00,),);
+
+#
+# 3.5. INDICATEUR D'ERREUR
+
+RESU00=CALC_ELEM(reuse =RESU00,
+                 RESULTAT=RESU00,
+                 OPTION=('SIEF_ELNO',),);
+
+RESU00=CALC_ERREUR(reuse =RESU00,
+                   RESULTAT=RESU00,
+                   OPTION=('ERME_ELEM',),);
+
+#
+# 3.6. IMPRESSION
+#IMPR_RESU(FORMAT='MED',RESU=_F(RESULTAT=RESU00,),);
+
+
+#
+# 4. ADAPTATION DU MAILLAGE DE 00 VERS 01 SELON L'INDICATEUR D'ERREUR
+
+MACR_ADAP_MAIL(MAILLAGE_N=M00,
+               MAILLAGE_NP1=CO('M01'),
+               ADAPTATION='RAFFINEMENT',
+               RESULTAT_N=RESU00,
+               NOM_CHAM='ERME_ELEM',
+               NOM_CMP='ERREST',
+               MAJ_CHAM=_F(CHAM_MAJ=CO('DEPL1'),
+                           TYPE_CHAM='NOEU_DEPL_R',
+                           RESULTAT=RESU00,
+                           NOM_CHAM='DEPL',
+                           NUME_ORDRE=1,),
+               CRIT_RAFF_PE=0.1,
+               QUALITE='OUI',
+               CONNEXITE='OUI',
+               TAILLE='OUI',);
+
+#IMPR_RESU(FORMAT='MED',RESU=_F(CHAM_GD=DEPL1,),);
+
+#
+# 5. CALCUL SUR LE MAILLAGE 01
+# 5.1. MODELE MECANIQUE
+
+MODE01=AFFE_MODELE(MAILLAGE=M01,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+#
+# 5.2. MISE EN PLACE DES MATERIAUX
+
+MATE01=AFFE_MATERIAU(MAILLAGE=M01,
+                     AFFE=_F(TOUT='OUI',
+                             MATER=MATER2,),);
+
+#
+# 5.3. CHARGEMENTS
+
+CHAR01=AFFE_CHAR_MECA(MODELE=MODE01,
+                      PESANTEUR=_F(GRAVITE=G,
+                                   DIRECTION=(4.,6.,-1.,),),
+                      FACE_IMPO=_F(GROUP_MA='X_0',
+                                   DX=0.,
+                                   DY=0.,
+                                   DZ=0.,),
+                      PRES_REP=(_F(GROUP_MA='X_MAX',
+                                   PRES=PRE,),
+                                _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                   PRES=PRES_0,),),);
+
+#
+# 5.4. RESOLUTION
+
+RESU01=MECA_STATIQUE(MODELE=MODE01,
+                     CHAM_MATER=MATE01,
+                     EXCIT=_F(CHARGE=CHAR01,),);
+
+#
+# 5.5. IMPRESSION
+#IMPR_RESU(FORMAT='MED',RESU=_F(RESULTAT=RESU01,),);
+
+
+#
+# 7. ADAPTATION DU MAILLAGE DE 01 VERS 02
+#    . RAFFINEMENT SELON UNE BOITE PARALLELEPIPEDIQUE
+#    ON CHOISIT 3 PETITES BOITES QUI CHACUNE ENTOURENT UNE ARETE D'UN
+#    HEXAEDRE. CES 3 ARETES N'ETANT PAS CONCOURRANTES, L'HEXAEDRE EST
+#    DECOUPE EN 18 TETRAEDRES. DE MEME, SON VOISIN SE TROUVE ALORS
+#    ATTAQUE PAR 2 ARETES EN VIS_A_VIS, DONC COUPE EN 2 PYRAMIDES
+#    ET 12 TETRAEDRES. CELA PERMET DE TESTER LES INTERPOLATIONS SUR
+#    LE NOEUD CENTRAL QUI EST CREE.
+
+MACR_ADAP_MAIL(MAILLAGE_N=M01,
+               MAILLAGE_NP1=CO('M02'),
+               ADAPTATION='RAFFINEMENT_ZONE',
+               ZONE=(_F(TYPE='BOITE',
+                       X_MINI= 3.99,
+                       X_MAXI= 4.01,
+                       Y_MINI= 3.99,
+                       Y_MAXI= 4.01,
+                       Z_MINI=-0.01,
+                       Z_MAXI= 2.01,),
+                     _F(TYPE='BOITE',
+                       X_MINI= 3.99,
+                       X_MAXI= 6.01,
+                       Y_MINI= 5.99,
+                       Y_MAXI= 6.01,
+                       Z_MINI=-0.01,
+                       Z_MAXI= 0.01,),
+                     _F(TYPE='BOITE',
+                       X_MINI= 5.99,
+                       X_MAXI= 6.01,
+                       Y_MINI= 3.99,
+                       Y_MAXI= 6.01,
+                       Z_MINI= 1.99,
+                       Z_MAXI= 2.01,),),
+               MAJ_CHAM=_F(CHAM_MAJ=CO('DEPL2'),
+                           TYPE_CHAM='NOEU_DEPL_R',
+                           RESULTAT=RESU01,
+                           NOM_CHAM='DEPL',
+                           NUME_ORDRE=1,),
+               QUALITE='OUI',);
+
+#IMPR_RESU(FORMAT='MED',RESU=_F(CHAM_GD=DEPL2,),);
+#
+# 8. CALCUL SUR LE MAILLAGE 02
+# 8.1. MODELE MECANIQUE
+
+MODE02=AFFE_MODELE(MAILLAGE=M02,
+                   AFFE=_F(TOUT='OUI',
+                           PHENOMENE='MECANIQUE',
+                           MODELISATION='3D',),);
+
+#
+# 8.2. MISE EN PLACE DES MATERIAUX
+
+MATE02=AFFE_MATERIAU(MAILLAGE=M02,
+                     AFFE=_F(TOUT='OUI',
+                             MATER=MATER2,),);
+
+#
+# 8.3. CHARGEMENTS
+
+CHAR02=AFFE_CHAR_MECA(MODELE=MODE02,
+                      PESANTEUR=_F(GRAVITE=G,
+                                   DIRECTION=(4.,6.,-1.,),),
+                      FACE_IMPO=_F(GROUP_MA='X_0',
+                                   DX=0.,
+                                   DY=0.,
+                                   DZ=0.,),
+                      PRES_REP=(_F(GROUP_MA='X_MAX',
+                                   PRES=PRE,),
+                                _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                   PRES=PRES_0,),),);
+
+#
+# 8.4. RESOLUTION
+
+RESU02=MECA_STATIQUE(MODELE=MODE02,
+                     CHAM_MATER=MATE02,
+                     EXCIT=_F(CHARGE=CHAR02,),);
+
+#
+# 8.5. INDICATEUR D'ERREUR
+
+RESU02=CALC_ELEM(reuse =RESU02,
+                 RESULTAT=RESU02,
+                 OPTION=('SIEF_ELNO',),);
+
+RESU02=CALC_ERREUR(reuse =RESU02,
+                   RESULTAT=RESU02,
+                   OPTION=('ERME_ELEM','ERME_ELNO',),);
+
+RESU02=CALC_NO(reuse =RESU02,
+               RESULTAT=RESU02,
+               OPTION='ERME_NOEU',);
+
+# 8.6. IMPRESSION
+#IMPR_RESU(FORMAT='MED',RESU=_F(RESULTAT=RESU02,),);
+#IMPR_RESU(RESU=_F(RESULTAT=RESU02,),);
+
+# 9. TESTS DE NON-REGRESSION
+#    ON CREE DEUX GROUPES DE NOEUD CONTENANT CHACUN UN DES NOEUDS CREES AU CENTRE
+#    DES HEXAEDRES COUPES. CELA PERMET DE S'AFFRANCHIR D'EVENTUELS CHANGEMENTS DE
+#    NUMEROTATION DES NOEUDS DANS HOMARD ET DE PERENISER LES TESTS
+#    REMARQUE : LEUR NOM EST CELUI DU NOEUD POUR LA VERSION 10.02.20
+#
+M02=DEFI_GROUP( reuse =M02,
+                MAILLAGE=M02,
+                CREA_GROUP_NO=(_F(NOM='N55',
+                                  OPTION='ENV_SPHERE',
+                                  POINT=(3.,3.,1.),
+                                  PRECISION=1/200.,
+                                  RAYON=1/200.),
+                              _F(NOM='N56',
+                                  OPTION='ENV_SPHERE',
+                                  POINT=(5.,5.,1.),
+                                  PRECISION=1/200.,
+                                  RAYON=1/200.),),
+                INFO=2 );
+
+#IMPR_RESU(FORMAT='MED',RESU=_F(MAILLAGE=M02,),);
+
+TEST_RESU(CHAM_NO=(_F(CHAM_GD=DEPL2,
+                     GROUP_NO='N55',
+                     NOM_CMP='DX',
+                     VALE=6.03633800,
+                     CRITERE='RELATIF',
+                     PRECISION=1.E-08,
+                     REFERENCE='NON_REGRESSION',
+                     VERSION='10.02.20',),
+                   _F(CHAM_GD=DEPL2,
+                     GROUP_NO='N56',
+                     NOM_CMP='DZ',
+                     VALE=-14.0615426,
+                     CRITERE='RELATIF',
+                     PRECISION=1.E-08,
+                     REFERENCE='NON_REGRESSION',
+                     VERSION='10.02.20',),),
+          RESU=(_F(RESULTAT=RESU02,
+                   NUME_ORDRE=1,
+                   NOM_CHAM='DEPL',
+                   NOM_CMP='DZ',
+                   GROUP_NO='A',
+                   VALE=-17.3329132,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-8,
+                   REFERENCE='NON_REGRESSION',
+                   VERSION='10.02.20',),
+                _F(RESULTAT=RESU02,
+                   NUME_ORDRE=1,
+                   NOM_CHAM='ERME_NOEU',
+                   NOM_CMP='ERREST',
+                   GROUP_NO='A',
+                   VALE=5.18187530E4,
+                   CRITERE='RELATIF',
+                   PRECISION=1.E-6,
+                   REFERENCE='NON_REGRESSION',
+                   VERSION='10.02.20',),),);
+
+FIN();
+
+==========================================
+==========================================
+
+ PARAMETRES DE LA GESTION MEMOIRE JEVEUX  
+ =======================================
+ LIMITE MEMOIRE STATIQUE       :        1.000 Mo
+ MEMOIRE DISPONIBLE            :        1.000 Mo
+ MEMOIRE PRISE                 :        1.000 Mo
+ LIMITE MEMOIRE DYNAMIQUE      :      511.000 Mo
+
+ LIMITE TAILLE DES BASES       :        48.00   Go 
+ =======================================
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0001            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   DEBUT(INFO=1,
+        CODE=_F(VISU_EFICAS='OUI',
+                NOM='ZZZZ121E',
+                NIV_PUB_WEB='INTERNET'),
+        PAR_LOT='OUI',
+        IMPR_MACRO='NON',
+        RESERVE_CPU=_F(BORNE=900),
+        MEMOIRE=_F(GESTION='RAPIDE',
+                   TYPE_ALLOCATION=1,
+                   TAILLE_BLOC=800.0,
+                   DYNAMIQUE=1),
+        DEBUG=_F(JEVEUX='NON',
+                 JXVERI='NON',
+                 SDVERI='OUI'),
+        MESURE_TEMPS=_F(NIVE_DETAIL=1),
+        );
+
+                                        -- CODE_ASTER -- VERSION DE DEVELOPPEMENT 11.00.10 --
+
+                                                         VERSION SEQUENTIELLE
+
+                                                    COPYRIGHT  EDF-R&D 1991 - 2011
+
+                                               EXECUTION DU : ME-31-AOUT-2011 10:30:19
+
+                                                    PLATE-FORME : ADPI-LAPTOP     
+
+                                                 NB MAX PROC OpenMP:   1             
+
+                                                      SYSTEME : LINUX           
+
+                                                        CPU : X86_64          
+
+
+
+
+
+   !---------------------------------------------------------------------------------------!
+   !                                                                                       !
+   ! Les mot-clés facteurs CODE et DEBUG dans DEBUT/POURSUITE sont réservés aux cas-tests. !
+   ! Il ne faut pas les utiliser dans les études car ils modifient certaines valeurs par   !
+   ! défaut des commandes DEBUT/POURSUITE qui ont des conséquences sur le comportement     !
+   ! en cas d'erreur ou sur les performances.                                              !
+   !                                                                                       !
+   !---------------------------------------------------------------------------------------!
+
+ Debug SDVERI demandé
+
+  Valeur initiale du temps CPU maximum =   24000 secondes
+  Valeur du temps CPU maximum passé aux commandes =   23990 secondes
+  Réserve CPU prévue = 10 secondes
+
+ Debut de lecture
+
+
+     RE-OUVERTURE DE LA BASE
+
+     NOM DE LA BASE                          :  ELEMBASE
+     CREEE AVEC LA VERSION                   :  11.00.10
+     NOMBRE D'ENREGISTREMENTS UTILISES       :  22
+     NOMBRE D'ENREGISTREMENTS MAXIMUM        :  512
+     LONGUEUR D'ENREGISTREMENT (OCTETS)      :  819200
+     NOMBRE D'IDENTIFICATEURS UTILISES       :  123
+     TAILLE MAXIMUM DU REPERTOIRE            :  300
+     POURCENTAGE D'UTILISATION DU REPERTOIRE :  41 %
+
+
+     FERMETURE DE LA BASE
+
+     NOM DE LA BASE                          :  ELEMBASE
+     NOMBRE D'ENREGISTREMENTS UTILISES       :  22
+     NOMBRE D'ENREGISTREMENTS MAXIMUM        :  512
+     LONGUEUR D'ENREGISTREMENT (OCTETS)      :  819200
+     NOMBRE TOTAL D'ACCES EN LECTURE         :  41
+     VOLUME DES ACCES EN LECTURE             :  32.03 Mo.
+     NOMBRE TOTAL D'ACCES EN ECRITURE        :  3
+     VOLUME DES ACCES EN ECRITURE            :  2.34 Mo.
+     NOMBRE D'IDENTIFICATEURS UTILISES       :  123
+     TAILLE MAXIMUM DU REPERTOIRE            :  300
+     POURCENTAGE D'UTILISATION DU REPERTOIRE :  41 %
+
+ Relecture des catalogues dans ELEMBASE faite.
+
+ fin de lecture (durée  0.010000  s.) 
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.88 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.58 Mo (MAXIMUM ATTEINT :        14.62 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.13 Mo 
+
+    #  FIN COMMANDE NO : 0001   USER+SYST:        0.07s (SYST:        0.04s, ELAPS:        0.05s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0002            CONCEPT DE TYPE : mater_sdaster
+    #  -------------                  ----------------- 
+   MATER2=DEFI_MATERIAU(INFO=1,
+                       ELAS=_F(ALPHA=1.5999999999999999E-05,
+                               E=2.20000E5,
+                               NU=0.33000000000000002,
+                               RHO=8300.0),
+                       );
+
+
+ MATERIAU : MATER2  
+ RELATION DE COMPORTEMENT: ELAS            
+
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.86 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        14.62 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.13 Mo 
+
+    #  FIN COMMANDE NO : 0002   USER+SYST:        0.00s (SYST:        0.00s, ELAPS:        0.00s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0003            CONCEPT DE TYPE : maillage_sdaster
+    #  -------------                  ----------------- 
+   M00=LIRE_MAILLAGE(INFO=1,
+                    NOM_MED='3x3___________________________00',
+                    INFO_MED=1,
+                    FORMAT='MED',
+                    UNITE=20,
+                    VERI_MAIL=_F(APLAT=1.E-3,
+                                 VERIF='OUI'),
+                    );
+
+  ====== VERIFICATION DU MAILLAGE ======
+
+
+------------ MAILLAGE M00      - IMPRESSIONS NIVEAU  1 ------------
+
+Iteration 0 - Maillage 3x3 pour test de base du raffinement libre des hexaedres 
+
+NOMBRE DE NOEUDS                          32
+
+NOMBRE DE MAILLES                         39
+                              QUAD4                  30
+                              HEXA8                   9
+
+NOMBRE DE GROUPES DE NOEUDS                2
+                              B                    1
+                              A                    1
+
+NOMBRE DE GROUPES DE MAILLES               5
+                              X_0                  3
+                              X_MAX                3
+                              Z_MI_MA             18
+                              Y_MI_MA              6
+                              VOLUME               9
+
+--------------------------------------------------------------------------------
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.87 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        14.62 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.13 Mo 
+
+    #  FIN COMMANDE NO : 0003   USER+SYST:        0.03s (SYST:        0.00s, ELAPS:        0.03s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0004            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   MACR_INFO_MAIL(QUALITE='OUI',
+                 INFO=1,
+                 MAILLAGE=M00,
+                 TAILLE='OUI',
+                 ELEMENTS_NON_HOMARD='REFUSER',
+                 LANGUE='FRANCAIS',
+                 INTERPENETRATION='OUI',
+                 NOMBRE='OUI',
+                 PROP_CALCUL='OUI',
+                 CONNEXITE='OUI',
+                 VERSION_HOMARD='V10_1',
+                 );
+
+
+La vérification de l'interpénétration peut etre très longue.
+Il ne faut l'utiliser que volontairement. Voir la documentation.
+
+ Code retour = 0      (maximum toléré : 0)
+
+----- Sortie standard (stdout) ---------------------------------------------------
+ANALYSE DU MAILLAGE
+===================
+
+     Maillage a analyser                               
+     M00                                                                             
+     Date de creation : mercredi 31 aout 2011 a 10 h 30 mn 19 s         
+     Dimension : 3
+     Degre : 1
+     C'est un maillage de depart.
+
+         Direction    |       Unite       |  Minimum   |  Maximum
+     ---------------------------------------------------------------
+     X                | INCONNUE          |  0.0000    |  6.0000    
+     Y                | INCONNUE          |  0.0000    |  6.0000    
+     Z                | INCONNUE          |  0.0000    |  2.0000    
+
+
+   INTERPENETRATION DES MAILLES
+   ============================
+
+
+     **********************************************************
+     *                                                        *
+     *        Recapitulatif sur les noeuds                    *
+     *                                                        *
+     *        Aucun probleme n'a ete rencontre.               *
+     *                                                        *
+     **********************************************************
+
+
+     **********************************************************
+     *                                                        *
+     *        Recapitulatif sur les hexaedres                 *
+     *                                                        *
+     *        Aucun probleme n'a ete rencontre.               *
+     *                                                        *
+     **********************************************************
+
+
+
+   DIAMETRES ET QUALITES DES MAILLES
+   =================================
+
+    DIAMETRES DES HEXAEDRES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un hexaedre, c'est la plus grande longueur         *
+     *  entre les aretes et les diagonales.                     *
+     ************************************************************
+     *              Valeur constante :      3.4641              *
+     ************************************************************
+
+    QUALITES DES HEXAEDRES
+    ----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale a la qualite du pire des  *
+     *  24 tetraedres composant l'hexaedre                      *
+     *  normalise a 1 pour un cube.                             *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+    DIAMETRES DES QUADRANGLES
+    -------------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un quadrangle, c'est la plus grande longueur       *
+     *  entre les aretes et les diagonales.                     *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      2.8284              *
+     ************************************************************
+
+    QUALITES DES QUADRANGLES
+    ------------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du produit de  *
+     *  la plus grande longueur des cotes et des diagonales et  *
+     *  de la moyenne quadratique des cotes sur la surface      *
+     *  minimum des triangles inscrits, normalise a 1 pour      *
+     *  pour un carre.                                          *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+
+   NOMBRE D'ENTITES DU CALCUL
+   ==========================
+
+
+     ************************************************************
+     *                      Noeuds                              *
+     ************************************************************
+     * Nombre total                                *         32 *
+     ************************************************************
+
+     ************************************************************
+     *                      Quadrangles                         *
+     ************************************************************
+     * Nombre total                                *         30 *
+     * . dont quadrangles de regions 2D            *          0 *
+     * . dont quadrangles de bord                  *         30 *
+     * . dont quadrangles internes aux volumes     *          0 *
+     ************************************************************
+
+     ************************************************************
+     *                      Hexaedres                           *
+     ************************************************************
+     * Nombre total                                *          9 *
+     ************************************************************
+
+
+   CONNEXITE DES ENTITES DU CALCUL
+   ===============================
+
+
+     **********************************************************
+     * Les hexaedres      sont en un seul bloc.               *
+     **********************************************************
+
+     **********************************************************
+     * Les quadrangles    sont en un seul bloc.               *
+     *    Cette surface est fermee.                           *
+     **********************************************************
+
+
+   TAILLES DES SOUS-DOMAINES DE CALCUL
+   ===================================
+
+
+          Direction      |       Unite
+     -----------------------------------------
+        X                |  INCONNUE        
+        Y                |  INCONNUE        
+        Z                |  INCONNUE        
+
+     ************************************************************
+     *                     Sous-domaines 3D                     *
+     ************************************************************
+     * Numero * Nom                              *  Volume      *
+     ************************************************************
+     *     -5 * VOLUME                           *  72.0000     *
+     ************************************************************
+     * Total :                                   *  72.0000     *
+     ************************************************************
+
+     ************************************************************
+     *                     Sous-domaines 2D                     *
+     ************************************************************
+     * Numero * Nom                              *  Surface     *
+     ************************************************************
+     *     -1 * Z_MI_MA                          *  72.0000     *
+     *     -3 * X_0                              *  12.0000     *
+     *     -2 * Y_MI_MA                          *  24.0000     *
+     *     -4 * X_MAX                            *  12.0000     *
+     ************************************************************
+     * Total :                                   *  120.000     *
+     ************************************************************
+     * Minimum :                                 *  12.0000     *
+     * Maximum :                                 *  72.0000     *
+     ************************************************************
+
+
+   DIAGNOSTICS SUR LES ELEMENTS DU CALCUL
+   ======================================
+
+   Un element est surcontraint si tous ses noeuds sont
+   sur le bord du domaine. Cela peut poser un probleme
+   selon les conditions aux limites utilisees.
+
+     ************************************************************
+     *                      Hexaedres                           *
+     ************************************************************
+     * Nombre d'elements surcontraints             *          9 *
+     * Nombre d'elements sans mailles de bord      *          0 *
+     ************************************************************
+
+.......................................................................
+: Memoire totale utilisee                          :          2.77 Mo :
+:.....................................................................:
+: Temps systeme total                     :    0.10000E-01 secondes   :
+: Temps de calcul total                   :    0.30000E-01 secondes   :
+:.....................................................................:
+----- fin stdout -----------------------------------------------------------------
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.87 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        14.62 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.13 Mo 
+
+    #  FIN COMMANDE NO : 0004   USER+SYST:        0.17s (SYST:        0.04s, ELAPS:        0.11s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0009            CONCEPT DE TYPE : modele_sdaster
+    #  -------------                  ----------------- 
+   MODE00=AFFE_MODELE(MAILLAGE=M00,
+                     INFO=1,
+                     AFFE=_F(PHENOMENE='MECANIQUE',
+                             TOUT='OUI',
+                             MODELISATION='3D'),
+                     PARTITION=_F(PARALLELISME='GROUP_ELEM'),
+                     VERI_JACOBIEN='OUI',
+                     );
+
+
+ SUR LES           39 MAILLES DU MAILLAGE M00     
+    ON A DEMANDE L'AFFECTATION DE           39
+    ON A PU EN AFFECTER                     39
+
+    MODELISATION      ELEMENT FINI      TYPE MAILLE          NOMBRE
+                      MECA_FACE4        QUAD4                    30
+    3D                MECA_HEXA8        HEXA8                     9
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.88 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.16 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.89 Mo 
+
+    #  FIN COMMANDE NO : 0009   USER+SYST:        0.04s (SYST:        0.00s, ELAPS:        0.04s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0010            CONCEPT DE TYPE : maillage_sdaster
+    #  -------------                  ----------------- 
+   M00=MODI_MAILLAGE(reuse = M00,
+                    MAILLAGE=M00,
+                    INFO=1,
+                    ORIE_PEAU_3D=_F(GROUP_MA=('X_0','X_MAX','Y_MI_MA','Z_MI_MA',)),
+                    );
+
+TRAITEMENT DU GROUP_MA: X_0      DE       3 MAILLES
+                              0 MAILLE(S) ONT ETE ORIENTEE(S)
+TRAITEMENT DU GROUP_MA: X_MAX    DE       3 MAILLES
+                              0 MAILLE(S) ONT ETE ORIENTEE(S)
+TRAITEMENT DU GROUP_MA: Y_MI_MA  DE       6 MAILLES
+                              0 MAILLE(S) ONT ETE ORIENTEE(S)
+TRAITEMENT DU GROUP_MA: Z_MI_MA  DE      18 MAILLES
+                              0 MAILLE(S) ONT ETE ORIENTEE(S)
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.88 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.16 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.89 Mo 
+
+    #  FIN COMMANDE NO : 0010   USER+SYST:        0.02s (SYST:        0.00s, ELAPS:        0.02s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0011            CONCEPT DE TYPE : cham_mater
+    #  -------------                  ----------------- 
+   MATE00=AFFE_MATERIAU(INFO=1,
+                       MAILLAGE=M00,
+                       AFFE=_F(MATER=MATER2,
+                               TOUT='OUI'),
+                       );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.88 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.16 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.89 Mo 
+
+    #  FIN COMMANDE NO : 0011   USER+SYST:        0.02s (SYST:        0.00s, ELAPS:        0.02s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0012            CONCEPT DE TYPE : char_meca
+    #  -------------                  ----------------- 
+   CHAR00=AFFE_CHAR_MECA(INFO=1,
+                        FACE_IMPO=_F(GROUP_MA='X_0',
+                                     DZ=0.0,
+                                     DX=0.0,
+                                     DY=0.0),
+                        PESANTEUR=_F(GRAVITE=9.8100000000000005,
+                                     DIRECTION=(4.0,6.0,-1.0,)),
+                        PRES_REP=(_F(GROUP_MA='X_MAX',
+                                     PRES=-3.E5),
+                                  _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                     PRES=1.E-14)),
+                        LIAISON_XFEM='NON',
+                        VERI_NORM='OUI',
+                        MODELE=MODE00,
+                        );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.90 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.16 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.89 Mo - VmData :       100.08 Mo - VmSize :       202.89 Mo 
+
+    #  FIN COMMANDE NO : 0012   USER+SYST:        0.06s (SYST:        0.00s, ELAPS:        0.06s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0013            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU00=MECA_STATIQUE(EXCIT=_F(TYPE_CHARGE='FIXE',
+                                CHARGE=CHAR00),
+                       INFO=1,
+                       OPTION='SIEF_ELGA',
+                       SOLVEUR=_F(RENUM='METIS',
+                                  STOP_SINGULIER='OUI',
+                                  METHODE='MULT_FRONT',
+                                  NPREC=8),
+                       INST=0.0,
+                       MODELE=MODE00,
+                       CHAM_MATER=MATE00,
+                       );
+
+
+Le système linéaire à résoudre contient 80 noeuds dont:
+   - 32 noeuds portant des degrés de liberté physiques
+   - 48 noeuds portant des degrés de liberté de Lagrange
+Pour un total de 144 équations.
+
+La matrice est de taille 144 équations.
+Mais elle contient:
+   -  2064 termes non nuls si elle est symétrique (soit un taux de remplissage de   1.99e+01 %)
+   -  3984 termes non nuls si elle n'est pas symétrique (soit un taux de remplissage de   1.92e+01 %)
+Le nombre de termes non nuls est susceptible de varier si l'on utilise le contact en méthode continue
+ou la méthode XFEM avec contact.
+   CHAMP STOCKE :             DEPL INSTANT :  0.00000E+00  NUMERO D'ORDRE :     1
+#1 Resolution des systemes lineaires              CPU (USER+SYST/SYST/ELAPS):      0.03      0.01      0.02
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.01      0.00      0.01
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.92 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.16 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.90 Mo - VmData :       100.08 Mo - VmSize :       202.90 Mo 
+
+    #  FIN COMMANDE NO : 0013   USER+SYST:        0.16s (SYST:        0.02s, ELAPS:        0.09s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0014            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU00=CALC_ELEM(reuse = RESU00,
+                   INFO=1,
+                   CRITERE='RELATIF',
+                   OPTION=('SIEF_ELNO',),
+                   TYPE_OPTION='TOUTES',
+                   SOLVEUR=_F(RENUM='METIS',
+                              STOP_SINGULIER='OUI',
+                              METHODE='MULT_FRONT',
+                              NPREC=8),
+                   PRECISION=9.9999999999999995E-07,
+                   RESULTAT=RESU00,
+                   );
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.93 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.23 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.90 Mo - VmData :       100.08 Mo - VmSize :       202.90 Mo 
+
+    #  FIN COMMANDE NO : 0014   USER+SYST:        0.06s (SYST:        0.00s, ELAPS:        0.06s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0015            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU00=CALC_ERREUR(reuse = RESU00,
+                     INFO=1,
+                     CRITERE='RELATIF',
+                     OPTION=('ERME_ELEM',),
+                     SOLVEUR=_F(RENUM='METIS',
+                                STOP_SINGULIER='OUI',
+                                METHODE='MULT_FRONT',
+                                NPREC=8),
+                     PRECISION=9.9999999999999995E-07,
+                     RESULTAT=RESU00,
+                     );
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.00
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.93 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.56 Mo (MAXIMUM ATTEINT :        20.23 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       202.90 Mo - VmData :       100.08 Mo - VmSize :       202.90 Mo 
+
+    #  FIN COMMANDE NO : 0015   USER+SYST:        0.06s (SYST:        0.00s, ELAPS:        0.06s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0016            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   MACR_ADAP_MAIL(QUALITE='OUI',
+                 INFO=1,
+                 USAGE_CHAMP='MAILLE',
+                 PROP_CALCUL='NON',
+                 RESULTAT_N=RESU00,
+                 MAILLAGE_NP1=CO('M01'),
+                 INTERPENETRATION='NON',
+                 MAJ_CHAM=_F(NUME_ORDRE=1,
+                             TYPE_CHAM='NOEU_DEPL_R',
+                             CHAM_MAJ=CO('DEPL1'),
+                             RESULTAT=RESU00,
+                             NOM_CHAM='DEPL',
+                             TYPE_MAJ='AUTO'),
+                 TAILLE='OUI',
+                 CRIT_RAFF_PE=0.10000000000000001,
+                 LANGUE='FRANCAIS',
+                 USAGE_CMP='NORME_L2',
+                 NOM_CMP='ERREST',
+                 ADAPTATION='RAFFINEMENT',
+                 NOM_CHAM='ERME_ELEM',
+                 NOMBRE='OUI',
+                 MAILLAGE_N=M00,
+                 CONNEXITE='OUI',
+                 ELEMENTS_NON_HOMARD='REFUSER',
+                 VERSION_HOMARD='V10_1',
+                 );
+
+
+ Code retour = 0      (maximum toléré : 0)
+
+----- Sortie standard (stdout) ---------------------------------------------------
+************************************************************
+     *               Champ pilotant l'adaptation                *
+     *            Valeur sur les           9 hexaedres          *
+     ************************************************************
+     *   Minimum :  0.35863E+06        Maximum :  0.24502E+07   *
+     *   Moyenne :  0.10359E+07     Ecart-type :  0.62839E+06   *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *     * 10**6         * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    0.300 <    0.410 * 11.11 .       1 *  11.11 .       1 *
+     *    0.410 <    0.520 * 11.11 .       1 *  22.22 .       2 *
+     *    0.520 <    0.630 * 11.11 .       1 *  33.33 .       3 *
+     *    0.630 <    0.740 * 11.11 .       1 *  44.44 .       4 *
+     *    0.740 <    0.850 * 11.11 .       1 *  55.56 .       5 *
+     *    0.850 <    0.960 *  0.00 .       0 *  55.56 .       5 *
+     *    0.960 <    1.070 *  0.00 .       0 *  55.56 .       5 *
+     *    1.070 <    1.180 *  0.00 .       0 *  55.56 .       5 *
+     *    1.180 <    1.290 * 11.11 .       1 *  66.67 .       6 *
+     *    1.290 <    1.400 *  0.00 .       0 *  66.67 .       6 *
+     *    1.400 <    1.510 * 22.22 .       2 *  88.89 .       8 *
+     *    1.510 <    1.620 *  0.00 .       0 *  88.89 .       8 *
+     *    1.620 <    1.730 *  0.00 .       0 *  88.89 .       8 *
+     *    1.730 <    1.840 *  0.00 .       0 *  88.89 .       8 *
+     *    1.840 <    1.950 *  0.00 .       0 *  88.89 .       8 *
+     *    1.950 <    2.060 *  0.00 .       0 *  88.89 .       8 *
+     *    2.060 <    2.170 *  0.00 .       0 *  88.89 .       8 *
+     *    2.170 <    2.280 *  0.00 .       0 *  88.89 .       8 *
+     *    2.280 <    2.390 *  0.00 .       0 *  88.89 .       8 *
+     *    2.390 <    2.500 * 11.11 .       1 * 100.00 .       9 *
+     ************************************************************
+
+
+
+ANALYSE DU MAILLAGE
+===================
+
+     Maillage apres adaptation                         
+     M00                                                                             
+     Date de creation : mercredi 31 aout 2011 a 10 h 30 mn 20 s         
+     Dimension : 3
+     Degre : 1
+     C'est un maillage obtenu apres une adaptation.
+     Le niveau minimum actif est   :     0
+     Le niveau maximum atteint est :     1
+
+         Direction    |       Unite       |  Minimum   |  Maximum
+     ---------------------------------------------------------------
+     X                | INCONNUE          |  0.0000    |  6.0000    
+     Y                | INCONNUE          |  0.0000    |  6.0000    
+     Z                | INCONNUE          |  0.0000    |  2.0000    
+
+
+   DIAMETRES ET QUALITES DES MAILLES
+   =================================
+
+    DIAMETRES DES TETRAEDRES
+    ------------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un tetraedre, c'est la longueur de la plus         *
+     *  grande arete.                                           *
+     ************************************************************
+     *              Valeur constante :      2.4495              *
+     ************************************************************
+
+    QUALITES DES TETRAEDRES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du diametre    *
+     *  du tetraedre sur le rayon de la sphere inscrite,        *
+     *  normalise a 1 pour un tetraedre regulier.               *
+     ************************************************************
+     *              Valeur constante :      1.6180              *
+     ************************************************************
+
+    DIAMETRES DES PYRAMIDES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour une pyramide, c'est la plus grande longueur        *
+     *  entre les aretes et les diagonales de la base.          *
+     ************************************************************
+     *   Minimum :   2.4495            Maximum :   3.0000       *
+     *   Moyenne :   2.6609         Ecart-type :  0.24981       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    2.440 <    2.465 * 57.14 .       8 *  57.14 .       8 *
+     *    2.465 <    2.490 *  0.00 .       0 *  57.14 .       8 *
+     *    2.490 <    2.515 *  0.00 .       0 *  57.14 .       8 *
+     *    2.515 <    2.540 *  0.00 .       0 *  57.14 .       8 *
+     *    2.540 <    2.565 *  0.00 .       0 *  57.14 .       8 *
+     *    2.565 <    2.590 *  0.00 .       0 *  57.14 .       8 *
+     *    2.590 <    2.615 *  0.00 .       0 *  57.14 .       8 *
+     *    2.615 <    2.640 *  0.00 .       0 *  57.14 .       8 *
+     *    2.640 <    2.665 *  0.00 .       0 *  57.14 .       8 *
+     *    2.665 <    2.690 *  0.00 .       0 *  57.14 .       8 *
+     *    2.690 <    2.715 *  0.00 .       0 *  57.14 .       8 *
+     *    2.715 <    2.740 *  0.00 .       0 *  57.14 .       8 *
+     *    2.740 <    2.765 *  0.00 .       0 *  57.14 .       8 *
+     *    2.765 <    2.790 *  0.00 .       0 *  57.14 .       8 *
+     *    2.790 <    2.815 *  0.00 .       0 *  57.14 .       8 *
+     *    2.815 <    2.840 * 14.29 .       2 *  71.43 .      10 *
+     *    2.840 <    2.865 *  0.00 .       0 *  71.43 .      10 *
+     *    2.865 <    2.890 *  0.00 .       0 *  71.43 .      10 *
+     *    2.890 <    2.915 *  0.00 .       0 *  71.43 .      10 *
+     *    2.915 <    2.940 *  0.00 .       0 *  71.43 .      10 *
+     *    2.940 <    2.965 *  0.00 .       0 *  71.43 .      10 *
+     *    2.965 <    2.990 *  0.00 .       0 *  71.43 .      10 *
+     *    2.990 <    3.015 * 28.57 .       4 * 100.00 .      14 *
+     *    3.015 <    3.040 *  0.00 .       0 * 100.00 .      14 *
+     *    3.040 <    3.065 *  0.00 .       0 * 100.00 .      14 *
+     *    3.065 <    3.090 *  0.00 .       0 * 100.00 .      14 *
+     *    3.090 <    3.115 *  0.00 .       0 * 100.00 .      14 *
+     *    3.115 <    3.140 *  0.00 .       0 * 100.00 .      14 *
+     *    3.140 <    3.165 *  0.00 .       0 * 100.00 .      14 *
+     *    3.165 <    3.190 *  0.00 .       0 * 100.00 .      14 *
+     ************************************************************
+
+    QUALITES DES PYRAMIDES
+    ----------------------
+
+     ************************************************************
+     *  Non definie aujourd'hui.                                *
+     ************************************************************
+
+    DIAMETRES DES HEXAEDRES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un hexaedre, c'est la plus grande longueur         *
+     *  entre les aretes et les diagonales.                     *
+     ************************************************************
+     *   Minimum :   1.7321            Maximum :   3.4641       *
+     *   Moyenne :   2.3982         Ecart-type :  0.84265       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.700 <    1.750 * 61.54 .       8 *  61.54 .       8 *
+     *    1.750 <    1.800 *  0.00 .       0 *  61.54 .       8 *
+     *    1.800 <    1.850 *  0.00 .       0 *  61.54 .       8 *
+     *    1.850 <    1.900 *  0.00 .       0 *  61.54 .       8 *
+     *    1.900 <    1.950 *  0.00 .       0 *  61.54 .       8 *
+     *    1.950 <    2.000 *  0.00 .       0 *  61.54 .       8 *
+     *    2.000 <    2.050 *  0.00 .       0 *  61.54 .       8 *
+     *    2.050 <    2.100 *  0.00 .       0 *  61.54 .       8 *
+     *    2.100 <    2.150 *  0.00 .       0 *  61.54 .       8 *
+     *    2.150 <    2.200 *  0.00 .       0 *  61.54 .       8 *
+     *    2.200 <    2.250 *  0.00 .       0 *  61.54 .       8 *
+     *    2.250 <    2.300 *  0.00 .       0 *  61.54 .       8 *
+     *    2.300 <    2.350 *  0.00 .       0 *  61.54 .       8 *
+     *    2.350 <    2.400 *  0.00 .       0 *  61.54 .       8 *
+     *    2.400 <    2.450 *  0.00 .       0 *  61.54 .       8 *
+     *    2.450 <    2.500 *  0.00 .       0 *  61.54 .       8 *
+     *    2.500 <    2.550 *  0.00 .       0 *  61.54 .       8 *
+     *    2.550 <    2.600 *  0.00 .       0 *  61.54 .       8 *
+     *    2.600 <    2.650 *  0.00 .       0 *  61.54 .       8 *
+     *    2.650 <    2.700 *  0.00 .       0 *  61.54 .       8 *
+     *    2.700 <    2.750 *  0.00 .       0 *  61.54 .       8 *
+     *    2.750 <    2.800 *  0.00 .       0 *  61.54 .       8 *
+     *    2.800 <    2.850 *  0.00 .       0 *  61.54 .       8 *
+     *    2.850 <    2.900 *  0.00 .       0 *  61.54 .       8 *
+     *    2.900 <    2.950 *  0.00 .       0 *  61.54 .       8 *
+     *    2.950 <    3.000 *  0.00 .       0 *  61.54 .       8 *
+     *    3.000 <    3.050 *  0.00 .       0 *  61.54 .       8 *
+     *    3.050 <    3.100 *  0.00 .       0 *  61.54 .       8 *
+     *    3.100 <    3.150 *  0.00 .       0 *  61.54 .       8 *
+     *    3.150 <    3.200 *  0.00 .       0 *  61.54 .       8 *
+     *    3.200 <    3.250 *  0.00 .       0 *  61.54 .       8 *
+     *    3.250 <    3.300 *  0.00 .       0 *  61.54 .       8 *
+     *    3.300 <    3.350 *  0.00 .       0 *  61.54 .       8 *
+     *    3.350 <    3.400 *  0.00 .       0 *  61.54 .       8 *
+     *    3.400 <    3.450 *  0.00 .       0 *  61.54 .       8 *
+     *    3.450 <    3.500 * 38.46 .       5 * 100.00 .      13 *
+     *    3.500 <    3.550 *  0.00 .       0 * 100.00 .      13 *
+     *    3.550 <    3.600 *  0.00 .       0 * 100.00 .      13 *
+     *    3.600 <    3.650 *  0.00 .       0 * 100.00 .      13 *
+     *    3.650 <    3.700 *  0.00 .       0 * 100.00 .      13 *
+     ************************************************************
+
+    QUALITES DES HEXAEDRES
+    ----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale a la qualite du pire des  *
+     *  24 tetraedres composant l'hexaedre                      *
+     *  normalise a 1 pour un cube.                             *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+    DIAMETRES DES TRIANGLES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un triangle, c'est la longueur de la plus          *
+     *  grande arete.                                           *
+     *  Remarque : on ne regarde ici que les triangles qui      *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      2.2361              *
+     ************************************************************
+
+    QUALITES DES TRIANGLES
+    ----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du diametre    *
+     *  du triangle sur le rayon du cercle inscrit,             *
+     *  normalise a 1 pour un triangle equilateral.             *
+     *  Remarque : on ne regarde ici que les triangles qui      *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *   Minimum :   1.0444            Maximum :   1.6899       *
+     *   Moyenne :   1.4748         Ecart-type :  0.30429       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.040 <    1.065 * 33.33 .       6 *  33.33 .       6 *
+     *    1.065 <    1.090 *  0.00 .       0 *  33.33 .       6 *
+     *    1.090 <    1.115 *  0.00 .       0 *  33.33 .       6 *
+     *    1.115 <    1.140 *  0.00 .       0 *  33.33 .       6 *
+     *    1.140 <    1.165 *  0.00 .       0 *  33.33 .       6 *
+     *    1.165 <    1.190 *  0.00 .       0 *  33.33 .       6 *
+     *    1.190 <    1.215 *  0.00 .       0 *  33.33 .       6 *
+     *    1.215 <    1.240 *  0.00 .       0 *  33.33 .       6 *
+     *    1.240 <    1.265 *  0.00 .       0 *  33.33 .       6 *
+     *    1.265 <    1.290 *  0.00 .       0 *  33.33 .       6 *
+     *    1.290 <    1.315 *  0.00 .       0 *  33.33 .       6 *
+     *    1.315 <    1.340 *  0.00 .       0 *  33.33 .       6 *
+     *    1.340 <    1.365 *  0.00 .       0 *  33.33 .       6 *
+     *    1.365 <    1.390 *  0.00 .       0 *  33.33 .       6 *
+     *    1.390 <    1.415 *  0.00 .       0 *  33.33 .       6 *
+     *    1.415 <    1.440 *  0.00 .       0 *  33.33 .       6 *
+     *    1.440 <    1.465 *  0.00 .       0 *  33.33 .       6 *
+     *    1.465 <    1.490 *  0.00 .       0 *  33.33 .       6 *
+     *    1.490 <    1.515 *  0.00 .       0 *  33.33 .       6 *
+     *    1.515 <    1.540 *  0.00 .       0 *  33.33 .       6 *
+     *    1.540 <    1.565 *  0.00 .       0 *  33.33 .       6 *
+     *    1.565 <    1.590 *  0.00 .       0 *  33.33 .       6 *
+     *    1.590 <    1.615 *  0.00 .       0 *  33.33 .       6 *
+     *    1.615 <    1.640 *  0.00 .       0 *  33.33 .       6 *
+     *    1.640 <    1.665 *  0.00 .       0 *  33.33 .       6 *
+     *    1.665 <    1.690 * 66.67 .      12 * 100.00 .      18 *
+     *    1.690 <    1.715 *  0.00 .       0 * 100.00 .      18 *
+     *    1.715 <    1.740 *  0.00 .       0 * 100.00 .      18 *
+     *    1.740 <    1.765 *  0.00 .       0 * 100.00 .      18 *
+     *    1.765 <    1.790 *  0.00 .       0 * 100.00 .      18 *
+     ************************************************************
+
+    DIAMETRES DES QUADRANGLES
+    -------------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un quadrangle, c'est la plus grande longueur       *
+     *  entre les aretes et les diagonales.                     *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *   Minimum :   1.4142            Maximum :   2.8284       *
+     *   Moyenne :   2.1999         Ecart-type :  0.70273       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.400 <    1.450 * 44.44 .      16 *  44.44 .      16 *
+     *    1.450 <    1.500 *  0.00 .       0 *  44.44 .      16 *
+     *    1.500 <    1.550 *  0.00 .       0 *  44.44 .      16 *
+     *    1.550 <    1.600 *  0.00 .       0 *  44.44 .      16 *
+     *    1.600 <    1.650 *  0.00 .       0 *  44.44 .      16 *
+     *    1.650 <    1.700 *  0.00 .       0 *  44.44 .      16 *
+     *    1.700 <    1.750 *  0.00 .       0 *  44.44 .      16 *
+     *    1.750 <    1.800 *  0.00 .       0 *  44.44 .      16 *
+     *    1.800 <    1.850 *  0.00 .       0 *  44.44 .      16 *
+     *    1.850 <    1.900 *  0.00 .       0 *  44.44 .      16 *
+     *    1.900 <    1.950 *  0.00 .       0 *  44.44 .      16 *
+     *    1.950 <    2.000 *  0.00 .       0 *  44.44 .      16 *
+     *    2.000 <    2.050 *  0.00 .       0 *  44.44 .      16 *
+     *    2.050 <    2.100 *  0.00 .       0 *  44.44 .      16 *
+     *    2.100 <    2.150 *  0.00 .       0 *  44.44 .      16 *
+     *    2.150 <    2.200 *  0.00 .       0 *  44.44 .      16 *
+     *    2.200 <    2.250 *  0.00 .       0 *  44.44 .      16 *
+     *    2.250 <    2.300 *  0.00 .       0 *  44.44 .      16 *
+     *    2.300 <    2.350 *  0.00 .       0 *  44.44 .      16 *
+     *    2.350 <    2.400 *  0.00 .       0 *  44.44 .      16 *
+     *    2.400 <    2.450 *  0.00 .       0 *  44.44 .      16 *
+     *    2.450 <    2.500 *  0.00 .       0 *  44.44 .      16 *
+     *    2.500 <    2.550 *  0.00 .       0 *  44.44 .      16 *
+     *    2.550 <    2.600 *  0.00 .       0 *  44.44 .      16 *
+     *    2.600 <    2.650 *  0.00 .       0 *  44.44 .      16 *
+     *    2.650 <    2.700 *  0.00 .       0 *  44.44 .      16 *
+     *    2.700 <    2.750 *  0.00 .       0 *  44.44 .      16 *
+     *    2.750 <    2.800 *  0.00 .       0 *  44.44 .      16 *
+     *    2.800 <    2.850 * 55.56 .      20 * 100.00 .      36 *
+     *    2.850 <    2.900 *  0.00 .       0 * 100.00 .      36 *
+     *    2.900 <    2.950 *  0.00 .       0 * 100.00 .      36 *
+     *    2.950 <    3.000 *  0.00 .       0 * 100.00 .      36 *
+     *    3.000 <    3.050 *  0.00 .       0 * 100.00 .      36 *
+     *    3.050 <    3.100 *  0.00 .       0 * 100.00 .      36 *
+     *    3.100 <    3.150 *  0.00 .       0 * 100.00 .      36 *
+     *    3.150 <    3.200 *  0.00 .       0 * 100.00 .      36 *
+     *    3.200 <    3.250 *  0.00 .       0 * 100.00 .      36 *
+     *    3.250 <    3.300 *  0.00 .       0 * 100.00 .      36 *
+     *    3.300 <    3.350 *  0.00 .       0 * 100.00 .      36 *
+     *    3.350 <    3.400 *  0.00 .       0 * 100.00 .      36 *
+     ************************************************************
+
+    QUALITES DES QUADRANGLES
+    ------------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du produit de  *
+     *  la plus grande longueur des cotes et des diagonales et  *
+     *  de la moyenne quadratique des cotes sur la surface      *
+     *  minimum des triangles inscrits, normalise a 1 pour      *
+     *  pour un carre.                                          *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+
+   NOMBRE D'ENTITES DU CALCUL
+   ==========================
+
+
+     ************************************************************
+     *                      Noeuds                              *
+     ************************************************************
+     * Nombre total                                *         51 *
+     ************************************************************
+
+     ************************************************************
+     *                      Triangles                           *
+     ************************************************************
+     * Nombre total                                *         18 *
+     * . dont triangles de regions 2D              *          0 *
+     * . dont triangles de bord                    *         18 *
+     * . dont triangles internes aux volumes       *          0 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *         18 *
+     ************************************************************
+
+     ************************************************************
+     *                      Quadrangles                         *
+     ************************************************************
+     * Nombre total                                *         36 *
+     * . dont quadrangles de regions 2D            *          0 *
+     * . dont quadrangles de bord                  *         36 *
+     * . dont quadrangles internes aux volumes     *          0 *
+     ************************************************************
+     * . du niveau   0                             *         20 *
+     * . du niveau   1                             *         16 *
+     ************************************************************
+
+     ************************************************************
+     *                      Tetraedres                          *
+     ************************************************************
+     * Nombre total                                *          8 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *          8 *
+     ************************************************************
+
+     ************************************************************
+     *                      Hexaedres                           *
+     ************************************************************
+     * Nombre total                                *         13 *
+     ************************************************************
+     * . du niveau   0                             *          5 *
+     * . du niveau   1                             *          8 *
+     ************************************************************
+
+     ************************************************************
+     *                      Pyramides                           *
+     ************************************************************
+     * Nombre total                                *         14 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *         14 *
+     ************************************************************
+
+
+   CONNEXITE DES ENTITES DU CALCUL
+   ===============================
+
+
+     **********************************************************
+     * Les volumes        sont en un seul bloc.               *
+     **********************************************************
+
+     **********************************************************
+     * Les faces          sont en un seul bloc.               *
+     *    Cette surface est fermee.                           *
+     **********************************************************
+
+
+   TAILLES DES SOUS-DOMAINES DE CALCUL
+   ===================================
+
+
+          Direction      |       Unite
+     -----------------------------------------
+        X                |  INCONNUE        
+        Y                |  INCONNUE        
+        Z                |  INCONNUE        
+
+     ************************************************************
+     *                     Sous-domaines 3D                     *
+     ************************************************************
+     * Numero * Nom                              *  Volume      *
+     ************************************************************
+     *     -5 * VOLUME                           *  72.0000     *
+     ************************************************************
+     * Total :                                   *  72.0000     *
+     ************************************************************
+
+     ************************************************************
+     *                     Sous-domaines 2D                     *
+     ************************************************************
+     * Numero * Nom                              *  Surface     *
+     ************************************************************
+     *     -1 * Z_MI_MA                          *  72.0000     *
+     *     -2 * Y_MI_MA                          *  24.0000     *
+     *     -3 * X_0                              *  12.0000     *
+     *     -4 * X_MAX                            *  12.0000     *
+     ************************************************************
+     * Total :                                   *  120.000     *
+     ************************************************************
+     * Minimum :                                 *  12.0000     *
+     * Maximum :                                 *  72.0000     *
+     ************************************************************
+
+.......................................................................
+: Memoire totale utilisee                          :          2.79 Mo :
+:.....................................................................:
+: Temps systeme total                     :     0.0000     secondes   :
+: Temps de calcul total                   :    0.10000     secondes   :
+:.....................................................................:
+----- fin stdout -----------------------------------------------------------------
+
+------------ MAILLAGE M01      - IMPRESSIONS NIVEAU  1 ------------
+
+HOMARD V10.1        1 mercredi 31 aout 2011 a 10 h 30 mn 20 s                   
+
+NOMBRE DE NOEUDS                          51
+
+NOMBRE DE MAILLES                         89
+                              TRIA3                  18
+                              QUAD4                  36
+                              TETRA4                  8
+                              PYRAM5                 14
+                              HEXA8                  13
+
+NOMBRE DE GROUPES DE NOEUDS                2
+                              A                    1
+                              B                    1
+
+NOMBRE DE GROUPES DE MAILLES               5
+                              VOLUME              35
+                              X_0                  8
+                              X_MAX                3
+                              Y_MI_MA             11
+                              Z_MI_MA             32
+
+--------------------------------------------------------------------------------
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.96 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.23 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0016   USER+SYST:        0.33s (SYST:        0.04s, ELAPS:        0.27s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0025            CONCEPT DE TYPE : modele_sdaster
+    #  -------------                  ----------------- 
+   MODE01=AFFE_MODELE(MAILLAGE=M01,
+                     INFO=1,
+                     AFFE=_F(PHENOMENE='MECANIQUE',
+                             TOUT='OUI',
+                             MODELISATION='3D'),
+                     PARTITION=_F(PARALLELISME='GROUP_ELEM'),
+                     VERI_JACOBIEN='OUI',
+                     );
+
+
+ SUR LES           89 MAILLES DU MAILLAGE M01     
+    ON A DEMANDE L'AFFECTATION DE           89
+    ON A PU EN AFFECTER                     89
+
+    MODELISATION      ELEMENT FINI      TYPE MAILLE          NOMBRE
+                      MECA_FACE3        TRIA3                    18
+                      MECA_FACE4        QUAD4                    36
+    3D                MECA_HEXA8        HEXA8                    13
+    3D                MECA_PYRAM5       PYRAM5                   14
+    3D                MECA_TETRA4       TETRA4                    8
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.01      0.00      0.00
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.96 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.24 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0025   USER+SYST:        0.05s (SYST:        0.00s, ELAPS:        0.05s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0026            CONCEPT DE TYPE : cham_mater
+    #  -------------                  ----------------- 
+   MATE01=AFFE_MATERIAU(INFO=1,
+                       MAILLAGE=M01,
+                       AFFE=_F(MATER=MATER2,
+                               TOUT='OUI'),
+                       );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.96 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.24 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0026   USER+SYST:        0.01s (SYST:        0.00s, ELAPS:        0.01s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0027            CONCEPT DE TYPE : char_meca
+    #  -------------                  ----------------- 
+   CHAR01=AFFE_CHAR_MECA(INFO=1,
+                        FACE_IMPO=_F(GROUP_MA='X_0',
+                                     DZ=0.0,
+                                     DX=0.0,
+                                     DY=0.0),
+                        PESANTEUR=_F(GRAVITE=9.8100000000000005,
+                                     DIRECTION=(4.0,6.0,-1.0,)),
+                        PRES_REP=(_F(GROUP_MA='X_MAX',
+                                     PRES=-3.E5),
+                                  _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                     PRES=1.E-14)),
+                        LIAISON_XFEM='NON',
+                        VERI_NORM='OUI',
+                        MODELE=MODE01,
+                        );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        21.99 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.24 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0027   USER+SYST:        0.06s (SYST:        0.00s, ELAPS:        0.06s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0028            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU01=MECA_STATIQUE(EXCIT=_F(TYPE_CHARGE='FIXE',
+                                CHARGE=CHAR01),
+                       INFO=1,
+                       OPTION='SIEF_ELGA',
+                       SOLVEUR=_F(RENUM='METIS',
+                                  STOP_SINGULIER='OUI',
+                                  METHODE='MULT_FRONT',
+                                  NPREC=8),
+                       INST=0.0,
+                       MODELE=MODE01,
+                       CHAM_MATER=MATE01,
+                       );
+
+
+Le système linéaire à résoudre contient 129 noeuds dont:
+   - 51 noeuds portant des degrés de liberté physiques
+   - 78 noeuds portant des degrés de liberté de Lagrange
+Pour un total de 231 équations.
+
+La matrice est de taille 231 équations.
+Mais elle contient:
+   -  3465 termes non nuls si elle est symétrique (soit un taux de remplissage de   1.30e+01 %)
+   -  6699 termes non nuls si elle n'est pas symétrique (soit un taux de remplissage de   1.26e+01 %)
+Le nombre de termes non nuls est susceptible de varier si l'on utilise le contact en méthode continue
+ou la méthode XFEM avec contact.
+   CHAMP STOCKE :             DEPL INSTANT :  0.00000E+00  NUMERO D'ORDRE :     1
+#1 Resolution des systemes lineaires              CPU (USER+SYST/SYST/ELAPS):      0.01      0.00      0.02
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.01      0.00      0.03
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.02 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.24 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0028   USER+SYST:        0.17s (SYST:        0.00s, ELAPS:        0.10s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0029            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   MACR_ADAP_MAIL(INFO=1,
+                 MAILLAGE_NP1=CO('M02'),
+                 MAJ_CHAM=_F(NUME_ORDRE=1,
+                             TYPE_CHAM='NOEU_DEPL_R',
+                             CHAM_MAJ=CO('DEPL2'),
+                             RESULTAT=RESU01,
+                             NOM_CHAM='DEPL',
+                             TYPE_MAJ='AUTO'),
+                 TAILLE='NON',
+                 ELEMENTS_NON_HOMARD='REFUSER',
+                 ADAPTATION='RAFFINEMENT_ZONE',
+                 PROP_CALCUL='NON',
+                 MAILLAGE_N=M01,
+                 CONNEXITE='NON',
+                 VERSION_HOMARD='V10_1',
+                 QUALITE='OUI',
+                 ZONE=(_F(Y_MAXI=4.0099999999999998,
+                          Z_MINI=-1.E-2,
+                          Y_MINI=3.9900000000000002,
+                          Z_MAXI=2.0099999999999998,
+                          X_MAXI=4.0099999999999998,
+                          X_MINI=3.9900000000000002,
+                          TYPE='BOITE'),
+                       _F(Y_MAXI=6.0099999999999998,
+                          Z_MINI=-1.E-2,
+                          Y_MINI=5.9900000000000002,
+                          Z_MAXI=1.E-2,
+                          X_MAXI=6.0099999999999998,
+                          X_MINI=3.9900000000000002,
+                          TYPE='BOITE'),
+                       _F(Y_MAXI=6.0099999999999998,
+                          Z_MINI=1.99,
+                          Y_MINI=3.9900000000000002,
+                          Z_MAXI=2.0099999999999998,
+                          X_MAXI=6.0099999999999998,
+                          X_MINI=5.9900000000000002,
+                          TYPE='BOITE')),
+                 LANGUE='FRANCAIS',
+                 INTERPENETRATION='NON',
+                 NOMBRE='OUI',
+                 );
+
+
+ Code retour = 0      (maximum toléré : 0)
+
+----- Sortie standard (stdout) ---------------------------------------------------
+ANALYSE DU MAILLAGE
+===================
+
+     Maillage apres adaptation                         
+     M00                                                                             
+     Date de creation : mercredi 31 aout 2011 a 10 h 30 mn 20 s         
+     Dimension : 3
+     Degre : 1
+     C'est un maillage obtenu apres      2 adaptations.
+     Le niveau minimum actif est   :     0
+     Le niveau maximum atteint est :     1
+
+         Direction    |       Unite       |  Minimum   |  Maximum
+     ---------------------------------------------------------------
+     X                | INCONNUE          |  0.0000    |  6.0000    
+     Y                | INCONNUE          |  0.0000    |  6.0000    
+     Z                | INCONNUE          |  0.0000    |  2.0000    
+
+
+   DIAMETRES ET QUALITES DES MAILLES
+   =================================
+
+    DIAMETRES DES TETRAEDRES
+    ------------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un tetraedre, c'est la longueur de la plus         *
+     *  grande arete.                                           *
+     ************************************************************
+     *   Minimum :   2.2361            Maximum :   2.4495       *
+     *   Moyenne :   2.2810         Ecart-type :  0.87008E-01   *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    2.230 <    2.235 *  0.00 .       0 *   0.00 .       0 *
+     *    2.235 <    2.240 * 78.95 .      30 *  78.95 .      30 *
+     *    2.240 <    2.245 *  0.00 .       0 *  78.95 .      30 *
+     *    2.245 <    2.250 *  0.00 .       0 *  78.95 .      30 *
+     *    2.250 <    2.255 *  0.00 .       0 *  78.95 .      30 *
+     *    2.255 <    2.260 *  0.00 .       0 *  78.95 .      30 *
+     *    2.260 <    2.265 *  0.00 .       0 *  78.95 .      30 *
+     *    2.265 <    2.270 *  0.00 .       0 *  78.95 .      30 *
+     *    2.270 <    2.275 *  0.00 .       0 *  78.95 .      30 *
+     *    2.275 <    2.280 *  0.00 .       0 *  78.95 .      30 *
+     *    2.280 <    2.285 *  0.00 .       0 *  78.95 .      30 *
+     *    2.285 <    2.290 *  0.00 .       0 *  78.95 .      30 *
+     *    2.290 <    2.295 *  0.00 .       0 *  78.95 .      30 *
+     *    2.295 <    2.300 *  0.00 .       0 *  78.95 .      30 *
+     *    2.300 <    2.305 *  0.00 .       0 *  78.95 .      30 *
+     *    2.305 <    2.310 *  0.00 .       0 *  78.95 .      30 *
+     *    2.310 <    2.315 *  0.00 .       0 *  78.95 .      30 *
+     *    2.315 <    2.320 *  0.00 .       0 *  78.95 .      30 *
+     *    2.320 <    2.325 *  0.00 .       0 *  78.95 .      30 *
+     *    2.325 <    2.330 *  0.00 .       0 *  78.95 .      30 *
+     *    2.330 <    2.335 *  0.00 .       0 *  78.95 .      30 *
+     *    2.335 <    2.340 *  0.00 .       0 *  78.95 .      30 *
+     *    2.340 <    2.345 *  0.00 .       0 *  78.95 .      30 *
+     *    2.345 <    2.350 *  0.00 .       0 *  78.95 .      30 *
+     *    2.350 <    2.355 *  0.00 .       0 *  78.95 .      30 *
+     *    2.355 <    2.360 *  0.00 .       0 *  78.95 .      30 *
+     *    2.360 <    2.365 *  0.00 .       0 *  78.95 .      30 *
+     *    2.365 <    2.370 *  0.00 .       0 *  78.95 .      30 *
+     *    2.370 <    2.375 *  0.00 .       0 *  78.95 .      30 *
+     *    2.375 <    2.380 *  0.00 .       0 *  78.95 .      30 *
+     *    2.380 <    2.385 *  0.00 .       0 *  78.95 .      30 *
+     *    2.385 <    2.390 *  0.00 .       0 *  78.95 .      30 *
+     *    2.390 <    2.395 *  0.00 .       0 *  78.95 .      30 *
+     *    2.395 <    2.400 *  0.00 .       0 *  78.95 .      30 *
+     *    2.400 <    2.405 *  0.00 .       0 *  78.95 .      30 *
+     *    2.405 <    2.410 *  0.00 .       0 *  78.95 .      30 *
+     *    2.410 <    2.415 *  0.00 .       0 *  78.95 .      30 *
+     *    2.415 <    2.420 *  0.00 .       0 *  78.95 .      30 *
+     *    2.420 <    2.425 *  0.00 .       0 *  78.95 .      30 *
+     *    2.425 <    2.430 *  0.00 .       0 *  78.95 .      30 *
+     *    2.430 <    2.435 *  0.00 .       0 *  78.95 .      30 *
+     *    2.435 <    2.440 *  0.00 .       0 *  78.95 .      30 *
+     *    2.440 <    2.445 *  0.00 .       0 *  78.95 .      30 *
+     *    2.445 <    2.450 * 21.05 .       8 * 100.00 .      38 *
+     *    2.450 <    2.455 *  0.00 .       0 * 100.00 .      38 *
+     *    2.455 <    2.460 *  0.00 .       0 * 100.00 .      38 *
+     *    2.460 <    2.465 *  0.00 .       0 * 100.00 .      38 *
+     *    2.465 <    2.470 *  0.00 .       0 * 100.00 .      38 *
+     *    2.470 <    2.475 *  0.00 .       0 * 100.00 .      38 *
+     *    2.475 <    2.480 *  0.00 .       0 * 100.00 .      38 *
+     ************************************************************
+
+    QUALITES DES TETRAEDRES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du diametre    *
+     *  du tetraedre sur le rayon de la sphere inscrite,        *
+     *  normalise a 1 pour un tetraedre regulier.               *
+     ************************************************************
+     *   Minimum :   1.3382            Maximum :   1.9837       *
+     *   Moyenne :   1.7368         Ecart-type :  0.27724       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.330 <    1.355 * 26.32 .      10 *  26.32 .      10 *
+     *    1.355 <    1.380 *  0.00 .       0 *  26.32 .      10 *
+     *    1.380 <    1.405 *  0.00 .       0 *  26.32 .      10 *
+     *    1.405 <    1.430 *  0.00 .       0 *  26.32 .      10 *
+     *    1.430 <    1.455 *  0.00 .       0 *  26.32 .      10 *
+     *    1.455 <    1.480 *  0.00 .       0 *  26.32 .      10 *
+     *    1.480 <    1.505 *  0.00 .       0 *  26.32 .      10 *
+     *    1.505 <    1.530 *  0.00 .       0 *  26.32 .      10 *
+     *    1.530 <    1.555 *  0.00 .       0 *  26.32 .      10 *
+     *    1.555 <    1.580 *  0.00 .       0 *  26.32 .      10 *
+     *    1.580 <    1.605 *  0.00 .       0 *  26.32 .      10 *
+     *    1.605 <    1.630 * 21.05 .       8 *  47.37 .      18 *
+     *    1.630 <    1.655 *  0.00 .       0 *  47.37 .      18 *
+     *    1.655 <    1.680 *  0.00 .       0 *  47.37 .      18 *
+     *    1.680 <    1.705 *  0.00 .       0 *  47.37 .      18 *
+     *    1.705 <    1.730 *  0.00 .       0 *  47.37 .      18 *
+     *    1.730 <    1.755 *  0.00 .       0 *  47.37 .      18 *
+     *    1.755 <    1.780 *  0.00 .       0 *  47.37 .      18 *
+     *    1.780 <    1.805 *  0.00 .       0 *  47.37 .      18 *
+     *    1.805 <    1.830 *  0.00 .       0 *  47.37 .      18 *
+     *    1.830 <    1.855 *  0.00 .       0 *  47.37 .      18 *
+     *    1.855 <    1.880 *  0.00 .       0 *  47.37 .      18 *
+     *    1.880 <    1.905 *  0.00 .       0 *  47.37 .      18 *
+     *    1.905 <    1.930 *  0.00 .       0 *  47.37 .      18 *
+     *    1.930 <    1.955 *  0.00 .       0 *  47.37 .      18 *
+     *    1.955 <    1.980 *  0.00 .       0 *  47.37 .      18 *
+     *    1.980 <    2.005 * 52.63 .      20 * 100.00 .      38 *
+     *    2.005 <    2.030 *  0.00 .       0 * 100.00 .      38 *
+     *    2.030 <    2.055 *  0.00 .       0 * 100.00 .      38 *
+     *    2.055 <    2.080 *  0.00 .       0 * 100.00 .      38 *
+     ************************************************************
+
+    DIAMETRES DES PYRAMIDES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour une pyramide, c'est la plus grande longueur        *
+     *  entre les aretes et les diagonales de la base.          *
+     ************************************************************
+     *   Minimum :   2.4495            Maximum :   3.0000       *
+     *   Moyenne :   2.7455         Ecart-type :  0.24966       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    2.440 <    2.465 * 40.00 .       8 *  40.00 .       8 *
+     *    2.465 <    2.490 *  0.00 .       0 *  40.00 .       8 *
+     *    2.490 <    2.515 *  0.00 .       0 *  40.00 .       8 *
+     *    2.515 <    2.540 *  0.00 .       0 *  40.00 .       8 *
+     *    2.540 <    2.565 *  0.00 .       0 *  40.00 .       8 *
+     *    2.565 <    2.590 *  0.00 .       0 *  40.00 .       8 *
+     *    2.590 <    2.615 *  0.00 .       0 *  40.00 .       8 *
+     *    2.615 <    2.640 *  0.00 .       0 *  40.00 .       8 *
+     *    2.640 <    2.665 *  0.00 .       0 *  40.00 .       8 *
+     *    2.665 <    2.690 *  0.00 .       0 *  40.00 .       8 *
+     *    2.690 <    2.715 *  0.00 .       0 *  40.00 .       8 *
+     *    2.715 <    2.740 *  0.00 .       0 *  40.00 .       8 *
+     *    2.740 <    2.765 *  0.00 .       0 *  40.00 .       8 *
+     *    2.765 <    2.790 *  0.00 .       0 *  40.00 .       8 *
+     *    2.790 <    2.815 *  0.00 .       0 *  40.00 .       8 *
+     *    2.815 <    2.840 * 20.00 .       4 *  60.00 .      12 *
+     *    2.840 <    2.865 *  0.00 .       0 *  60.00 .      12 *
+     *    2.865 <    2.890 *  0.00 .       0 *  60.00 .      12 *
+     *    2.890 <    2.915 *  0.00 .       0 *  60.00 .      12 *
+     *    2.915 <    2.940 *  0.00 .       0 *  60.00 .      12 *
+     *    2.940 <    2.965 *  0.00 .       0 *  60.00 .      12 *
+     *    2.965 <    2.990 *  0.00 .       0 *  60.00 .      12 *
+     *    2.990 <    3.015 * 40.00 .       8 * 100.00 .      20 *
+     *    3.015 <    3.040 *  0.00 .       0 * 100.00 .      20 *
+     *    3.040 <    3.065 *  0.00 .       0 * 100.00 .      20 *
+     *    3.065 <    3.090 *  0.00 .       0 * 100.00 .      20 *
+     *    3.090 <    3.115 *  0.00 .       0 * 100.00 .      20 *
+     *    3.115 <    3.140 *  0.00 .       0 * 100.00 .      20 *
+     *    3.140 <    3.165 *  0.00 .       0 * 100.00 .      20 *
+     *    3.165 <    3.190 *  0.00 .       0 * 100.00 .      20 *
+     ************************************************************
+
+    QUALITES DES PYRAMIDES
+    ----------------------
+
+     ************************************************************
+     *  Non definie aujourd'hui.                                *
+     ************************************************************
+
+    DIAMETRES DES HEXAEDRES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un hexaedre, c'est la plus grande longueur         *
+     *  entre les aretes et les diagonales.                     *
+     ************************************************************
+     *   Minimum :   1.7321            Maximum :   3.4641       *
+     *   Moyenne :   2.0785         Ecart-type :  0.69282       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.700 <    1.750 * 80.00 .       8 *  80.00 .       8 *
+     *    1.750 <    1.800 *  0.00 .       0 *  80.00 .       8 *
+     *    1.800 <    1.850 *  0.00 .       0 *  80.00 .       8 *
+     *    1.850 <    1.900 *  0.00 .       0 *  80.00 .       8 *
+     *    1.900 <    1.950 *  0.00 .       0 *  80.00 .       8 *
+     *    1.950 <    2.000 *  0.00 .       0 *  80.00 .       8 *
+     *    2.000 <    2.050 *  0.00 .       0 *  80.00 .       8 *
+     *    2.050 <    2.100 *  0.00 .       0 *  80.00 .       8 *
+     *    2.100 <    2.150 *  0.00 .       0 *  80.00 .       8 *
+     *    2.150 <    2.200 *  0.00 .       0 *  80.00 .       8 *
+     *    2.200 <    2.250 *  0.00 .       0 *  80.00 .       8 *
+     *    2.250 <    2.300 *  0.00 .       0 *  80.00 .       8 *
+     *    2.300 <    2.350 *  0.00 .       0 *  80.00 .       8 *
+     *    2.350 <    2.400 *  0.00 .       0 *  80.00 .       8 *
+     *    2.400 <    2.450 *  0.00 .       0 *  80.00 .       8 *
+     *    2.450 <    2.500 *  0.00 .       0 *  80.00 .       8 *
+     *    2.500 <    2.550 *  0.00 .       0 *  80.00 .       8 *
+     *    2.550 <    2.600 *  0.00 .       0 *  80.00 .       8 *
+     *    2.600 <    2.650 *  0.00 .       0 *  80.00 .       8 *
+     *    2.650 <    2.700 *  0.00 .       0 *  80.00 .       8 *
+     *    2.700 <    2.750 *  0.00 .       0 *  80.00 .       8 *
+     *    2.750 <    2.800 *  0.00 .       0 *  80.00 .       8 *
+     *    2.800 <    2.850 *  0.00 .       0 *  80.00 .       8 *
+     *    2.850 <    2.900 *  0.00 .       0 *  80.00 .       8 *
+     *    2.900 <    2.950 *  0.00 .       0 *  80.00 .       8 *
+     *    2.950 <    3.000 *  0.00 .       0 *  80.00 .       8 *
+     *    3.000 <    3.050 *  0.00 .       0 *  80.00 .       8 *
+     *    3.050 <    3.100 *  0.00 .       0 *  80.00 .       8 *
+     *    3.100 <    3.150 *  0.00 .       0 *  80.00 .       8 *
+     *    3.150 <    3.200 *  0.00 .       0 *  80.00 .       8 *
+     *    3.200 <    3.250 *  0.00 .       0 *  80.00 .       8 *
+     *    3.250 <    3.300 *  0.00 .       0 *  80.00 .       8 *
+     *    3.300 <    3.350 *  0.00 .       0 *  80.00 .       8 *
+     *    3.350 <    3.400 *  0.00 .       0 *  80.00 .       8 *
+     *    3.400 <    3.450 *  0.00 .       0 *  80.00 .       8 *
+     *    3.450 <    3.500 * 20.00 .       2 * 100.00 .      10 *
+     *    3.500 <    3.550 *  0.00 .       0 * 100.00 .      10 *
+     *    3.550 <    3.600 *  0.00 .       0 * 100.00 .      10 *
+     *    3.600 <    3.650 *  0.00 .       0 * 100.00 .      10 *
+     *    3.650 <    3.700 *  0.00 .       0 * 100.00 .      10 *
+     ************************************************************
+
+    QUALITES DES HEXAEDRES
+    ----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale a la qualite du pire des  *
+     *  24 tetraedres composant l'hexaedre                      *
+     *  normalise a 1 pour un cube.                             *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+    DIAMETRES DES TRIANGLES
+    -----------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un triangle, c'est la longueur de la plus          *
+     *  grande arete.                                           *
+     *  Remarque : on ne regarde ici que les triangles qui      *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      2.2361              *
+     ************************************************************
+
+    QUALITES DES TRIANGLES
+    ----------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du diametre    *
+     *  du triangle sur le rayon du cercle inscrit,             *
+     *  normalise a 1 pour un triangle equilateral.             *
+     *  Remarque : on ne regarde ici que les triangles qui      *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *   Minimum :   1.0444            Maximum :   1.6899       *
+     *   Moyenne :   1.4748         Ecart-type :  0.30429       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.040 <    1.065 * 33.33 .      10 *  33.33 .      10 *
+     *    1.065 <    1.090 *  0.00 .       0 *  33.33 .      10 *
+     *    1.090 <    1.115 *  0.00 .       0 *  33.33 .      10 *
+     *    1.115 <    1.140 *  0.00 .       0 *  33.33 .      10 *
+     *    1.140 <    1.165 *  0.00 .       0 *  33.33 .      10 *
+     *    1.165 <    1.190 *  0.00 .       0 *  33.33 .      10 *
+     *    1.190 <    1.215 *  0.00 .       0 *  33.33 .      10 *
+     *    1.215 <    1.240 *  0.00 .       0 *  33.33 .      10 *
+     *    1.240 <    1.265 *  0.00 .       0 *  33.33 .      10 *
+     *    1.265 <    1.290 *  0.00 .       0 *  33.33 .      10 *
+     *    1.290 <    1.315 *  0.00 .       0 *  33.33 .      10 *
+     *    1.315 <    1.340 *  0.00 .       0 *  33.33 .      10 *
+     *    1.340 <    1.365 *  0.00 .       0 *  33.33 .      10 *
+     *    1.365 <    1.390 *  0.00 .       0 *  33.33 .      10 *
+     *    1.390 <    1.415 *  0.00 .       0 *  33.33 .      10 *
+     *    1.415 <    1.440 *  0.00 .       0 *  33.33 .      10 *
+     *    1.440 <    1.465 *  0.00 .       0 *  33.33 .      10 *
+     *    1.465 <    1.490 *  0.00 .       0 *  33.33 .      10 *
+     *    1.490 <    1.515 *  0.00 .       0 *  33.33 .      10 *
+     *    1.515 <    1.540 *  0.00 .       0 *  33.33 .      10 *
+     *    1.540 <    1.565 *  0.00 .       0 *  33.33 .      10 *
+     *    1.565 <    1.590 *  0.00 .       0 *  33.33 .      10 *
+     *    1.590 <    1.615 *  0.00 .       0 *  33.33 .      10 *
+     *    1.615 <    1.640 *  0.00 .       0 *  33.33 .      10 *
+     *    1.640 <    1.665 *  0.00 .       0 *  33.33 .      10 *
+     *    1.665 <    1.690 * 66.67 .      20 * 100.00 .      30 *
+     *    1.690 <    1.715 *  0.00 .       0 * 100.00 .      30 *
+     *    1.715 <    1.740 *  0.00 .       0 * 100.00 .      30 *
+     *    1.740 <    1.765 *  0.00 .       0 * 100.00 .      30 *
+     *    1.765 <    1.790 *  0.00 .       0 * 100.00 .      30 *
+     ************************************************************
+
+    DIAMETRES DES QUADRANGLES
+    -------------------------
+
+     ************************************************************
+     *  Rappel : le diametre est egal a la longueur du plus     *
+     *  grand segment que l'on peut tracer dans la maille.      *
+     *  Pour un quadrangle, c'est la plus grande longueur       *
+     *  entre les aretes et les diagonales.                     *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *   Minimum :   1.4142            Maximum :   2.8284       *
+     *   Moyenne :   2.1213         Ecart-type :  0.70711       *
+     ************************************************************
+     *                  Fonction de repartition                 *
+     *      Valeurs        *        Nombre de mailles           *
+     *    Mini <  < Maxi   *   par classe    *      cumul       *
+     *                     * en %  . nombre  *  en %  . nombre  *
+     ************************************************************
+     *    1.400 <    1.450 * 50.00 .      16 *  50.00 .      16 *
+     *    1.450 <    1.500 *  0.00 .       0 *  50.00 .      16 *
+     *    1.500 <    1.550 *  0.00 .       0 *  50.00 .      16 *
+     *    1.550 <    1.600 *  0.00 .       0 *  50.00 .      16 *
+     *    1.600 <    1.650 *  0.00 .       0 *  50.00 .      16 *
+     *    1.650 <    1.700 *  0.00 .       0 *  50.00 .      16 *
+     *    1.700 <    1.750 *  0.00 .       0 *  50.00 .      16 *
+     *    1.750 <    1.800 *  0.00 .       0 *  50.00 .      16 *
+     *    1.800 <    1.850 *  0.00 .       0 *  50.00 .      16 *
+     *    1.850 <    1.900 *  0.00 .       0 *  50.00 .      16 *
+     *    1.900 <    1.950 *  0.00 .       0 *  50.00 .      16 *
+     *    1.950 <    2.000 *  0.00 .       0 *  50.00 .      16 *
+     *    2.000 <    2.050 *  0.00 .       0 *  50.00 .      16 *
+     *    2.050 <    2.100 *  0.00 .       0 *  50.00 .      16 *
+     *    2.100 <    2.150 *  0.00 .       0 *  50.00 .      16 *
+     *    2.150 <    2.200 *  0.00 .       0 *  50.00 .      16 *
+     *    2.200 <    2.250 *  0.00 .       0 *  50.00 .      16 *
+     *    2.250 <    2.300 *  0.00 .       0 *  50.00 .      16 *
+     *    2.300 <    2.350 *  0.00 .       0 *  50.00 .      16 *
+     *    2.350 <    2.400 *  0.00 .       0 *  50.00 .      16 *
+     *    2.400 <    2.450 *  0.00 .       0 *  50.00 .      16 *
+     *    2.450 <    2.500 *  0.00 .       0 *  50.00 .      16 *
+     *    2.500 <    2.550 *  0.00 .       0 *  50.00 .      16 *
+     *    2.550 <    2.600 *  0.00 .       0 *  50.00 .      16 *
+     *    2.600 <    2.650 *  0.00 .       0 *  50.00 .      16 *
+     *    2.650 <    2.700 *  0.00 .       0 *  50.00 .      16 *
+     *    2.700 <    2.750 *  0.00 .       0 *  50.00 .      16 *
+     *    2.750 <    2.800 *  0.00 .       0 *  50.00 .      16 *
+     *    2.800 <    2.850 * 50.00 .      16 * 100.00 .      32 *
+     *    2.850 <    2.900 *  0.00 .       0 * 100.00 .      32 *
+     *    2.900 <    2.950 *  0.00 .       0 * 100.00 .      32 *
+     *    2.950 <    3.000 *  0.00 .       0 * 100.00 .      32 *
+     *    3.000 <    3.050 *  0.00 .       0 * 100.00 .      32 *
+     *    3.050 <    3.100 *  0.00 .       0 * 100.00 .      32 *
+     *    3.100 <    3.150 *  0.00 .       0 * 100.00 .      32 *
+     *    3.150 <    3.200 *  0.00 .       0 * 100.00 .      32 *
+     *    3.200 <    3.250 *  0.00 .       0 * 100.00 .      32 *
+     *    3.250 <    3.300 *  0.00 .       0 * 100.00 .      32 *
+     *    3.300 <    3.350 *  0.00 .       0 * 100.00 .      32 *
+     *    3.350 <    3.400 *  0.00 .       0 * 100.00 .      32 *
+     ************************************************************
+
+    QUALITES DES QUADRANGLES
+    ------------------------
+
+     ************************************************************
+     *  Rappel : la qualite est egale au rapport du produit de  *
+     *  la plus grande longueur des cotes et des diagonales et  *
+     *  de la moyenne quadratique des cotes sur la surface      *
+     *  minimum des triangles inscrits, normalise a 1 pour      *
+     *  pour un carre.                                          *
+     *  Remarque : on ne regarde ici que les quadrangles qui    *
+     *  sont de vraies mailles de calcul.                       *
+     ************************************************************
+     *              Valeur constante :      1.0000              *
+     ************************************************************
+
+
+   NOMBRE D'ENTITES DU CALCUL
+   ==========================
+
+
+     ************************************************************
+     *                      Noeuds                              *
+     ************************************************************
+     * Nombre total                                *         56 *
+     ************************************************************
+
+     ************************************************************
+     *                      Triangles                           *
+     ************************************************************
+     * Nombre total                                *         30 *
+     * . dont triangles de regions 2D              *          0 *
+     * . dont triangles de bord                    *         30 *
+     * . dont triangles internes aux volumes       *          0 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *         30 *
+     ************************************************************
+
+     ************************************************************
+     *                      Quadrangles                         *
+     ************************************************************
+     * Nombre total                                *         32 *
+     * . dont quadrangles de regions 2D            *          0 *
+     * . dont quadrangles de bord                  *         32 *
+     * . dont quadrangles internes aux volumes     *          0 *
+     ************************************************************
+     * . du niveau   0                             *         16 *
+     * . du niveau   1                             *         16 *
+     ************************************************************
+
+     ************************************************************
+     *                      Tetraedres                          *
+     ************************************************************
+     * Nombre total                                *         38 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *         38 *
+     ************************************************************
+
+     ************************************************************
+     *                      Hexaedres                           *
+     ************************************************************
+     * Nombre total                                *         10 *
+     ************************************************************
+     * . du niveau   0                             *          2 *
+     * . du niveau   1                             *          8 *
+     ************************************************************
+
+     ************************************************************
+     *                      Pyramides                           *
+     ************************************************************
+     * Nombre total                                *         20 *
+     ************************************************************
+     * . du niveau   0                             *          0 *
+     * . du niveau   1                             *         20 *
+     ************************************************************
+
+.......................................................................
+: Memoire totale utilisee                          :        142.73 ko :
+:.....................................................................:
+: Temps systeme total                     :    0.10000E-01 secondes   :
+: Temps de calcul total                   :    0.90000E-01 secondes   :
+:.....................................................................:
+----- fin stdout -----------------------------------------------------------------
+
+------------ MAILLAGE M02      - IMPRESSIONS NIVEAU  1 ------------
+
+HOMARD V10.1        2 mercredi 31 aout 2011 a 10 h 30 mn 20 s                   
+
+NOMBRE DE NOEUDS                          56
+
+NOMBRE DE MAILLES                        130
+                              TRIA3                  30
+                              QUAD4                  32
+                              TETRA4                 38
+                              PYRAM5                 20
+                              HEXA8                  10
+
+NOMBRE DE GROUPES DE NOEUDS                2
+                              A                    1
+                              B                    1
+
+NOMBRE DE GROUPES DE MAILLES               5
+                              VOLUME              68
+                              X_0                  8
+                              X_MAX                5
+                              Y_MI_MA             13
+                              Z_MI_MA             36
+
+--------------------------------------------------------------------------------
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.06 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.24 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0029   USER+SYST:        0.31s (SYST:        0.05s, ELAPS:        0.25s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0037            CONCEPT DE TYPE : modele_sdaster
+    #  -------------                  ----------------- 
+   MODE02=AFFE_MODELE(MAILLAGE=M02,
+                     INFO=1,
+                     AFFE=_F(PHENOMENE='MECANIQUE',
+                             TOUT='OUI',
+                             MODELISATION='3D'),
+                     PARTITION=_F(PARALLELISME='GROUP_ELEM'),
+                     VERI_JACOBIEN='OUI',
+                     );
+
+
+ SUR LES          130 MAILLES DU MAILLAGE M02     
+    ON A DEMANDE L'AFFECTATION DE          130
+    ON A PU EN AFFECTER                    130
+
+    MODELISATION      ELEMENT FINI      TYPE MAILLE          NOMBRE
+                      MECA_FACE3        TRIA3                    30
+                      MECA_FACE4        QUAD4                    32
+    3D                MECA_HEXA8        HEXA8                    10
+    3D                MECA_PYRAM5       PYRAM5                   20
+    3D                MECA_TETRA4       TETRA4                   38
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.01      0.00      0.00
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.06 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.25 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0037   USER+SYST:        0.05s (SYST:        0.00s, ELAPS:        0.05s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0038            CONCEPT DE TYPE : cham_mater
+    #  -------------                  ----------------- 
+   MATE02=AFFE_MATERIAU(INFO=1,
+                       MAILLAGE=M02,
+                       AFFE=_F(MATER=MATER2,
+                               TOUT='OUI'),
+                       );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.07 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.25 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0038   USER+SYST:        0.01s (SYST:        0.00s, ELAPS:        0.01s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0039            CONCEPT DE TYPE : char_meca
+    #  -------------                  ----------------- 
+   CHAR02=AFFE_CHAR_MECA(INFO=1,
+                        FACE_IMPO=_F(GROUP_MA='X_0',
+                                     DZ=0.0,
+                                     DX=0.0,
+                                     DY=0.0),
+                        PESANTEUR=_F(GRAVITE=9.8100000000000005,
+                                     DIRECTION=(4.0,6.0,-1.0,)),
+                        PRES_REP=(_F(GROUP_MA='X_MAX',
+                                     PRES=-3.E5),
+                                  _F(GROUP_MA=('Y_MI_MA','Z_MI_MA',),
+                                     PRES=1.E-14)),
+                        LIAISON_XFEM='NON',
+                        VERI_NORM='OUI',
+                        MODELE=MODE02,
+                        );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.09 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.25 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0039   USER+SYST:        0.06s (SYST:        0.00s, ELAPS:        0.06s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0040            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU02=MECA_STATIQUE(EXCIT=_F(TYPE_CHARGE='FIXE',
+                                CHARGE=CHAR02),
+                       INFO=1,
+                       OPTION='SIEF_ELGA',
+                       SOLVEUR=_F(RENUM='METIS',
+                                  STOP_SINGULIER='OUI',
+                                  METHODE='MULT_FRONT',
+                                  NPREC=8),
+                       INST=0.0,
+                       MODELE=MODE02,
+                       CHAM_MATER=MATE02,
+                       );
+
+
+Le système linéaire à résoudre contient 134 noeuds dont:
+   - 56 noeuds portant des degrés de liberté physiques
+   - 78 noeuds portant des degrés de liberté de Lagrange
+Pour un total de 246 équations.
+
+La matrice est de taille 246 équations.
+Mais elle contient:
+   -  3621 termes non nuls si elle est symétrique (soit un taux de remplissage de   1.20e+01 %)
+   -  6996 termes non nuls si elle n'est pas symétrique (soit un taux de remplissage de   1.16e+01 %)
+Le nombre de termes non nuls est susceptible de varier si l'on utilise le contact en méthode continue
+ou la méthode XFEM avec contact.
+   CHAMP STOCKE :             DEPL INSTANT :  0.00000E+00  NUMERO D'ORDRE :     1
+#1 Resolution des systemes lineaires              CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.02
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.03      0.00      0.03
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.13 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.25 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0040   USER+SYST:        0.17s (SYST:        0.01s, ELAPS:        0.11s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0041            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU02=CALC_ELEM(reuse = RESU02,
+                   INFO=1,
+                   CRITERE='RELATIF',
+                   OPTION=('SIEF_ELNO',),
+                   TYPE_OPTION='TOUTES',
+                   SOLVEUR=_F(RENUM='METIS',
+                              STOP_SINGULIER='OUI',
+                              METHODE='MULT_FRONT',
+                              NPREC=8),
+                   PRECISION=9.9999999999999995E-07,
+                   RESULTAT=RESU02,
+                   );
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.00      0.00      0.01
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.15 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0041   USER+SYST:        0.07s (SYST:        0.00s, ELAPS:        0.07s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0042            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU02=CALC_ERREUR(reuse = RESU02,
+                     INFO=1,
+                     CRITERE='RELATIF',
+                     OPTION=('ERME_ELEM','ERME_ELNO',),
+                     SOLVEUR=_F(RENUM='METIS',
+                                STOP_SINGULIER='OUI',
+                                METHODE='MULT_FRONT',
+                                NPREC=8),
+                     PRECISION=9.9999999999999995E-07,
+                     RESULTAT=RESU02,
+                     );
+
+#2 Calculs elementaires et assemblages            CPU (USER+SYST/SYST/ELAPS):      0.02      0.00      0.02
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.19 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0042   USER+SYST:        0.08s (SYST:        0.00s, ELAPS:        0.08s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0043            CONCEPT DE TYPE : evol_elas
+    #  -------------                  ----------------- 
+   RESU02=CALC_NO(reuse = RESU02,
+                 CRITERE='RELATIF',
+                 RESULTAT=RESU02,
+                 OPTION='ERME_NOEU',
+                 PRECISION=9.9999999999999995E-07,
+                 );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.21 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0043   USER+SYST:        0.07s (SYST:        0.00s, ELAPS:        0.07s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0044            CONCEPT DE TYPE : maillage_sdaster
+    #  -------------                  ----------------- 
+   M02=DEFI_GROUP(reuse = M02,
+                 INFO=2,
+                 MAILLAGE=M02,
+                 CREA_GROUP_NO=(_F(NOM='N55',
+                                   RAYON=5.0000000000000001E-3,
+                                   POINT=(3.0,3.0,1.0,),
+                                   OPTION='ENV_SPHERE',
+                                   PRECISION=5.0000000000000001E-3),
+                                _F(NOM='N56',
+                                   RAYON=5.0000000000000001E-3,
+                                   POINT=(5.0,5.0,1.0,),
+                                   OPTION='ENV_SPHERE',
+                                   PRECISION=5.0000000000000001E-3)),
+                 ALARME='OUI',
+                 );
+
+
+
+NOMBRE  DE GROUPES DE NOEUDS CREES :      2
+=======================================
+
+               --------------------------------------
+               ! NOM DU GROUPE ! NBRE DE NOEUDS DU  !
+               !    NOEUDS     !      GROUPE_NO     !
+               --------------------------------------
+               !  N55          !         1          !
+               !  N56          !         1          !
+               --------------------------------------
+
+
+NOEUDS DU GROUPE N55      :
+---------------------------
+ N55      
+
+NOEUDS DU GROUPE N56      :
+---------------------------
+ N56      
+
+
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.21 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0044   USER+SYST:        0.02s (SYST:        0.00s, ELAPS:        0.02s)
+    #  ------------------------------------------------------------------------------------------
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0045            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   TEST_RESU(TEST_NAN='NON',
+            CHAM_NO=(_F(CRITERE='RELATIF',
+                        REFERENCE='NON_REGRESSION',
+                        NOM_CMP='DX',
+                        GROUP_NO='N55',
+                        PRECISION=1.E-08,
+                        VALE=6.0363379999999998,
+                        VERSION='10.02.20',
+                        CHAM_GD=DEPL2,
+                        VALE_ABS='NON'),
+                     _F(CRITERE='RELATIF',
+                        REFERENCE='NON_REGRESSION',
+                        NOM_CMP='DZ',
+                        GROUP_NO='N56',
+                        PRECISION=1.E-08,
+                        VALE=-14.061542599999999,
+                        VERSION='10.02.20',
+                        CHAM_GD=DEPL2,
+                        VALE_ABS='NON')),
+            RESU=(_F(CRITERE='RELATIF',
+                     NUME_ORDRE=1,
+                     REFERENCE='NON_REGRESSION',
+                     NOM_CMP='DZ',
+                     GROUP_NO='A',
+                     PRECISION=1.E-08,
+                     VALE=-17.3329132,
+                     VERSION='10.02.20',
+                     RESULTAT=RESU02,
+                     NOM_CHAM='DEPL',
+                     VALE_ABS='NON'),
+                  _F(CRITERE='RELATIF',
+                     NUME_ORDRE=1,
+                     REFERENCE='NON_REGRESSION',
+                     NOM_CMP='ERREST',
+                     GROUP_NO='A',
+                     PRECISION=9.9999999999999995E-07,
+                     VALE=5.1818752999999997E4,
+                     VERSION='10.02.20',
+                     RESULTAT=RESU02,
+                     NOM_CHAM='ERME_NOEU',
+                     VALE_ABS='NON')),
+            );
+
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :        22.21 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         7.57 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.09 Mo - VmSize :       211.13 Mo 
+
+    #  FIN COMMANDE NO : 0045   USER+SYST:        0.00s (SYST:        0.00s, ELAPS:        0.00s)
+    #  ------------------------------------------------------------------------------------------
+
+   !-----------------------------------------------------------------------!
+   !   Liste des alarmes émises lors de l'exécution du calcul.             !
+   !                                                                       !
+   !   Les alarmes que vous avez choisies d'ignorer sont précédées de (*). !
+   !   Nombre d'occurrences pour chacune des alarmes :                     !
+   !          aucune alarme                                                !
+   !-----------------------------------------------------------------------!
+
+
+    #  ------------------------------------------------------------------------------------------ 
+    #  COMMANDE NO :  0046            CONCEPT DE TYPE : 
+    #  -------------                  ----------------- 
+   FIN(RETASSAGE='NON',
+      INFO_RESU='OUI',
+      FORMAT_HDF='NON',
+      UNITE=6,
+      );
+
+
+ ======>
+
+ STRUCTURE DU CONCEPT RESU00   CALCULE POUR 1 NUMERO D'ORDRE
+
+ LISTE DES NOMS SYMBOLIQUES:
+ ! ---------- !----------------!----------------!----------------!----------------!
+ ! NUME_ORDRE !      DEPL      !   SIEF_ELGA    !   SIEF_ELNO    !   ERME_ELEM    !
+ ! ---------- !----------------!----------------!----------------!----------------!
+ !          1 !     DEPL_R     !     SIEF_R     !     SIEF_R     !     ERRE_R     !
+ ! ---------- !----------------!----------------!----------------!----------------!
+
+ LISTE DES NOMS DE VARIABLES D'ACCES:
+                                      INST             DE TYPE  R
+
+ LISTE DES NOMS DE PARAMETRES:
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ ! NUME_ORDRE !    CARAELEM    !    CHAMPMAT    !  ERREUR_ERRE   !     EXCIT      !   ITER_GCPC    !    METHODE     !     MODELE     !     RENUM      !    STOCKAGE    !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ !          1 !       K8       !       K8       !       R        !      K24       !       I        !      K16       !       K8       !      K16       !      K16       !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+
+ ======>
+
+ STRUCTURE DU CONCEPT RESU01   CALCULE POUR 1 NUMERO D'ORDRE
+
+ LISTE DES NOMS SYMBOLIQUES:
+ ! ---------- !----------------!----------------!
+ ! NUME_ORDRE !      DEPL      !   SIEF_ELGA    !
+ ! ---------- !----------------!----------------!
+ !          1 !     DEPL_R     !     SIEF_R     !
+ ! ---------- !----------------!----------------!
+
+ LISTE DES NOMS DE VARIABLES D'ACCES:
+                                      INST             DE TYPE  R
+
+ LISTE DES NOMS DE PARAMETRES:
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ ! NUME_ORDRE !    CARAELEM    !    CHAMPMAT    !     EXCIT      !   ITER_GCPC    !    METHODE     !     MODELE     !     RENUM      !    STOCKAGE    !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ !          1 !       K8       !       K8       !      K24       !       I        !      K16       !       K8       !      K16       !      K16       !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+
+ ======>
+
+ STRUCTURE DU CONCEPT RESU02   CALCULE POUR 1 NUMERO D'ORDRE
+
+ LISTE DES NOMS SYMBOLIQUES:
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!
+ ! NUME_ORDRE !      DEPL      !   SIEF_ELGA    !   SIEF_ELNO    !   ERME_ELEM    !   ERME_ELNO    !   ERME_NOEU    !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!
+ !          1 !     DEPL_R     !     SIEF_R     !     SIEF_R     !     ERRE_R     !     ERRE_R     !     ERRE_R     !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!
+
+ LISTE DES NOMS DE VARIABLES D'ACCES:
+                                      INST             DE TYPE  R
+
+ LISTE DES NOMS DE PARAMETRES:
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ ! NUME_ORDRE !    CARAELEM    !    CHAMPMAT    !  ERREUR_ERRE   !     EXCIT      !   ITER_GCPC    !    METHODE     !     MODELE     !     RENUM      !    STOCKAGE    !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ !          1 !       K8       !       K8       !       R        !      K24       !       I        !      K16       !       K8       !      K16       !      K16       !
+ ! ---------- !----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!----------------!
+ ---------------------------------------------------------------------------
+ Concepts de la base: G
+    Nom       Type                 Taille (Mo)         Nombre      Nombre de
+                                                     d'objets       segments
+    TOTAL                                14.60            412            712
+  
+    MATER2     MATER_SDASTER              0.00              4              4
+    M00        MAILLAGE_SDASTER           0.01             35             63
+    MODE00     MODELE_SDASTER             0.00              7             12
+    MATE00     CHAM_MATER                 0.00              5             10
+    CHAR00     CHAR_MECA                  0.01             29             59
+    RESU00     EVOL_ELAS                  0.03             43             52
+    M01        MAILLAGE_SDASTER           0.01             35             63
+    DEPL1      CHAM_NO_SDASTER            0.01              7              9
+    MODE01     MODELE_SDASTER             0.01              7             12
+    MATE01     CHAM_MATER                 0.00              5             10
+    CHAR01     CHAR_MECA                  0.02             29             59
+    RESU01     EVOL_ELAS                  0.04             24             33
+    M02        MAILLAGE_SDASTER           0.02             35             65
+    DEPL2      CHAM_NO_SDASTER            0.01              7              9
+    MODE02     MODELE_SDASTER             0.01              7             12
+    MATE02     CHAM_MATER                 0.00              5             10
+    CHAR02     CHAR_MECA                  0.02             29             59
+    RESU02     EVOL_ELAS                  0.12             53             64
+    &FOZERO                               0.00              2              2
+    &&_NUM_C                              0.00              1              1
+    &&SYS.KR                              0.04              1              1
+    &CATA.AC                              0.00              2              4
+    &CATA.CL                              0.25              1              3
+    &CATA.GD                              0.04              4             11
+    &CATA.ME                              0.10              2              4
+    &CATA.OP                              0.35              4             19
+    &CATA.PH                              0.00              1              1
+    &CATA.PR                              0.00              2              4
+    &CATA.TE                             13.50             17             42
+    &CATA.TH                              0.00              2              4
+    &CATA.TM                              0.01              7             11
+ ---------------------------------------------------------------------------
+
+
+     FERMETURE DE LA BASE
+
+     NOM DE LA BASE                          :  GLOBALE
+     NOMBRE D'ENREGISTREMENTS UTILISES       :  26
+     NOMBRE D'ENREGISTREMENTS MAXIMUM        :  62914
+     LONGUEUR D'ENREGISTREMENT (OCTETS)      :  819200
+     NOMBRE TOTAL D'ACCES EN LECTURE         :  7
+     VOLUME DES ACCES EN LECTURE             :  5.47 Mo.
+     NOMBRE TOTAL D'ACCES EN ECRITURE        :  40
+     VOLUME DES ACCES EN ECRITURE            :  31.25 Mo.
+     NOMBRE D'IDENTIFICATEURS UTILISES       :  718
+     TAILLE MAXIMUM DU REPERTOIRE            :  2000
+     POURCENTAGE D'UTILISATION DU REPERTOIRE :  35 %
+
+
+     FERMETURE DE LA BASE
+
+     NOM DE LA BASE                          :  VOLATILE
+     NOMBRE D'ENREGISTREMENTS UTILISES       :  3
+     NOMBRE D'ENREGISTREMENTS MAXIMUM        :  62914
+     LONGUEUR D'ENREGISTREMENT (OCTETS)      :  819200
+     NOMBRE TOTAL D'ACCES EN LECTURE         :  0
+     VOLUME DES ACCES EN LECTURE             :  0.00 Mo.
+     NOMBRE TOTAL D'ACCES EN ECRITURE        :  4
+     VOLUME DES ACCES EN ECRITURE            :  3.12 Mo.
+     NOMBRE D'IDENTIFICATEURS UTILISES       :  1059
+     TAILLE MAXIMUM DU REPERTOIRE            :  2000
+     POURCENTAGE D'UTILISATION DU REPERTOIRE :  52 %
+  
+ <I>       FERMETURE DES BASES EFFECTUEE
+  
+   STATISTIQUES CONCERNANT L'ALLOCATION DYNAMIQUE :
+     TAILLE CUMULEE MAXIMUM            :                   26  Mo.
+     TAILLE CUMULEE LIBEREE            :                  130  Mo.
+     NOMBRE TOTAL D'ALLOCATIONS        :               118567
+     NOMBRE TOTAL DE LIBERATIONS       :               118567
+     APPELS AU MECANISME DE LIBERATION :                    0
+     TAILLE MEMOIRE CUMULEE RECUPEREE  :                    0  Mo.
+     VOLUME DES LECTURES               :                    0  Mo.
+     VOLUME DES ECRITURES              :                    0  Mo.
+  
+   MAXIMUM DE MEMOIRE UTILISEE PAR
+   LE PROCESSUS LORS DE L'EXECUTION    :       211.24 Mo.
+  
+ <I>       FIN D'EXECUTION LE : ME-31-AOUT-2011 10:30:21
+  
+    #  USAGE DE LA MEMOIRE JEVEUX
+    #     - MEMOIRE DYNAMIQUE CONSOMMEE :         0.00 Mo (MAXIMUM ATTEINT :        26.10 Mo) 
+    #     - MEMOIRE UTILISEE            :         0.00 Mo (MAXIMUM ATTEINT :        20.38 Mo) 
+    #  USAGE DE LA MEMOIRE POUR LE PROCESSUS
+    #     - VmPeak :       211.24 Mo - VmData :       100.08 Mo - VmSize :       211.12 Mo 
+
+    #  FIN COMMANDE NO : 0046   USER+SYST:        0.05s (SYST:        0.04s, ELAPS:        0.05s)
+    #  ------------------------------------------------------------------------------------------
+
+
+  <I> <INFORMATION TEMPS D'EXECUTION> (EN SECONDE)
+      TEMPS CPU TOTAL ..............          3.97
+      TEMPS CPU USER TOTAL .........          3.62
+      TEMPS CPU SYSTEME TOTAL ......          0.35
+      TEMPS CPU RESTANT ............      23996.03
+
+EXECUTION_CODE_ASTER_EXIT_3091-adpi-laptop=0

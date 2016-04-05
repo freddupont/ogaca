@@ -1,0 +1,242 @@
+#########################################################
+#test catalogue
+
+bibli_dir='/home/fred/asteretude/kuwait/bibli'
+fichiercata='/tmp/cata.mar'
+import sys
+
+#importation du catalogue
+sys.path.append(bibli_dir)
+import catalogue_beta3 
+
+#utilise par la suite pour la generation du maillage
+#sys.path.append(aster_dir+'/bibpyt/Utilitai')
+from Utilitai.sup_gmsh import *
+
+
+
+
+##traitement aster
+DEBUT(PAR_LOT='NON');
+
+
+cata=catalogue_beta3.CATALOGUE_POUTRE();#chargement du catalogue
+cata.affiche_generateur();#affichage des generateur de section disponnible
+
+
+
+cata.section_ajout("sbox2","sbox",(0.4,0.2,0.1,0.03,0.2,0.03))
+cata.section_ajout("sbox1","sbox",(0.4,0.2,0.1,0.03,0.2,0.03,0.3,0.03,0.05,0.04,0.3,0.1))
+cata.section_ajout("Iasym2","Iasym",(0.3,0.03,0.2,0.02,0.1,0.01,0.01))
+cata.section_ajout("Iasym1","Iasym",(0.3,0.03,0.2,0.02,0.1,0.01))
+cata.section_ajout("rect0","rect",(0.3,0.1))#rectangle plein
+cata.section_ajout("rect1","rect",(0.3,0.1,0.01,0.012))#rectangle creux
+cata.section_ajout("rect2","rect",(0.3,0.1,0.01,0.012,0.03))#rectangle avec conge
+cata.section_ajout("U100x10x0","Csym",(0.3,0.1,0.01,0.012))
+cata.section_ajout("U100x10","Csym",(0.3,0.1,0.01,0.012,0.006))
+
+cata.section_ajout("C100x10","Lasym",(0.1,0.1,0.01,0.012,0.006))
+cata.section_ajout("IPE100","Isym",(0.1,0.055,0.0041,0.0057,0.007))#ajout d un ipe
+cata.section_ajout("PRS100","Isym",(0.1,0.055,0.0041,0.0057))#ajout d un prs sans conge
+cata.section_ajout("C100x10","Lasym",(0.1,0.1,0.01,0.012,0.006))#ajout d une  corniere avec conge
+cata.section_ajout("L100x100x10","Lasym",(0.1,0.1,0.01))#ajout d un l sans conge
+
+cata.section_ajout("phi30-10","rond",(0.3,0.1))#ajout d un tube rond
+cata.section_ajout("phi30","rond",[0.3])#ajout d un tube rond
+cata.section_ajout("fauxrond","rond",(0.3,0.1),
+    ( 1.033611e-03,1.592200e-07,1.712373e-06,2.591895e+00,1.741158e+00,2.712071e-08,2.718475e-10,1.099189e-08,5.000000e-02,2.750000e-02,7.034528e-03,3.422608e-10,-8.381564e-18,-5.045094e-18,9.000000e+01,2.220784e-20,-7.538662e-19,),
+    True)
+##ajout d un tube rond avec les caracteristique de lipe
+##format: ('AIRE','IY_PRIN_G','IZ_PRIN_G','AY','AZ','EY','EZ','CT','Y_MAX','Z_MAX','RT','JG','IYR2_PRIN_G','IZR2_PRIN_G','ALPHA','CDG_X','CDG_Y')
+##       rotation de 90 deg
+
+
+cata.section_generation("IPE100")
+cata.section_generation_mail("IPE100",UNITE=78);
+
+cata.section_generation_tout()
+#determination des propriete de toute les section du catalogue
+#qui n'ont pas de caracteristiques
+
+
+cata.section_sauvegarde_catalogue(fichiercata)#sauvegarde
+
+
+#cata2=catalogue_beta3.CATALOGUE_POUTRE();
+#cata2.section_charge_catalogue(fichiercata)#chargement (ajout a la base)
+#cata2.section_recharge_catalogue(fichiercata)#chargement (supprime le catalogue existant)
+#
+#
+#
+#cata.section_affiche("phi3025")#affichage des propriete d'une section
+#cata.section_affiche_nom();#affiche les nom disponnible
+#cata.section_affiche_tout();#on affiche tout le catalogue de section
+#
+###cata.section_generation_mail("IPE100",UNITE=78);
+##export du maillage de la section
+##utilise pour calculer les caracteristiques
+##par default unite=80
+#
+#cata.affecter_GRMA_TYPE('LL1',"IPE100")
+##affectation du groupe mail 'LL1' sur "IPE100"
+#
+##cata.desaffecter_GRMA(groupma)
+##cata.desaffecter_tout()
+#
+##exemple de sortie pour aster
+#print "cata.POUTRE();"
+#print cata.POUTRE();
+
+##Verification des resultats:
+##generation du maillage a la volle
+#PP0=Point(0,0,0)
+#PP1=Point(1,0,0)
+#LL1=Line(PP0,PP1)
+#LL1.Transfinite(100)
+#mesh2=Mesh()
+#mesh2.Physical('LL1',LL1)
+#mesh2.Physical('PP0',PP0)
+#mesh2.Physical('PP1',PP1)
+#
+#
+#MA=mesh2.LIRE_GMSH();
+#
+##IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MA),);
+#
+##on pose les hypotheses
+#MO=AFFE_MODELE(MAILLAGE=MA,
+#               AFFE=_F(TOUT='OUI',
+#                       PHENOMENE='MECANIQUE',
+#                       MODELISATION='POU_D_E',),);
+#
+#MATR=DEFI_MATERIAU(ELAS=_F(E=210E9,
+#                           NU=0.3,),);
+#
+#CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+#                    AFFE=_F(TOUT='OUI',
+#                            MATER=MATR,),);
+#
+#
+#
+##integration dans CA ici.
+#CAREL=AFFE_CARA_ELEM(MODELE=MO,
+#                     INFO=1,
+#                     POUTRE=cata.POUTRE()
+#                    )
+
+#CHARGX=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FX=1000,),);
+#
+#
+#ResuX=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGX,),
+#                    );
+#
+#ResuX=CALC_NO(reuse =ResuX,
+#              RESULTAT=ResuX,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuX=CALC_ELEM(reuse =ResuX,
+#             RESULTAT=ResuX,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuX,),);
+#
+#CHARGY=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FY=1000,),);
+#ResuY=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGY,),
+#                    );
+#
+#ResuY=CALC_NO(reuse =ResuY,
+#              RESULTAT=ResuY,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuY=CALC_ELEM(reuse =ResuY,
+#             RESULTAT=ResuY,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=82,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuY,),);
+#CHARGZ=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      FZ=1000,),);
+#ResuZ=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGZ,),
+#                    );
+#
+#ResuZ=CALC_NO(reuse =ResuZ,
+#              RESULTAT=ResuZ,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuZ=CALC_ELEM(reuse =ResuZ,
+#             RESULTAT=ResuZ,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=84,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuZ,),);
+#
+#
+#CHARGRX=AFFE_CHAR_MECA(MODELE=MO,
+#                      DDL_IMPO=_F(GROUP_NO='PP0',
+#                                  DX=0.0,
+#                                  DY=0.0,
+#                                  DZ=0.0,
+#                                  DRX=0.0,
+#                                  DRY=0.0,
+#                                  DRZ=0.0,),
+#                      FORCE_NODALE=_F(GROUP_NO='PP1',
+#                                      MX=1000,),);
+#ResuRX=MECA_STATIQUE(MODELE=MO,
+#                    CHAM_MATER=CHMAT,
+#                    CARA_ELEM=CAREL,
+#                    INST=0,
+#                    EXCIT=_F(CHARGE=CHARGRX,),
+#                    );
+#
+#ResuRX=CALC_NO(reuse =ResuRX,
+#              RESULTAT=ResuRX,
+#              TOUT_ORDRE='OUI',
+#              OPTION='FORC_NODA',)
+#ResuRX=CALC_ELEM(reuse =ResuRX,
+#             RESULTAT=ResuRX,
+#             TOUT_ORDRE='OUI',
+#             OPTION=('SIEF_ELNO','SIPO_ELNO'))#SIGM_ELNO_DEPL
+#
+#IMPR_RESU(FORMAT='MED',UNITE=83,RESU=_F(MAILLAGE=MAIL,RESULTAT=ResuRX,),);
+
+
+FIN();

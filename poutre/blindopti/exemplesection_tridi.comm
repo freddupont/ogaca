@@ -1,0 +1,181 @@
+#exemplesection_tridi.comm
+#test de blind optiopti_sec
+#sur une structure plus complexe de 4000 elements
+#tres lourd a utiliser
+
+# ======================================================================
+# COPYRIGHT (C) 2011  FREDERIC RENOU frederic.renou.pb@gmail.com
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM;
+# ======================================================================
+
+bibli_dir='/home/fred/asteretude/blindopti/bibli'
+fichiercata3D='/home/fred/asteretude/blindopti/tridicata.tmp'
+fichiercata="/home/fred/asteretude/blindopti/cataCHS.cata"
+import sys
+
+#importation du catalogue
+sys.path.append(bibli_dir)
+import catalogue_beta
+from opti_section_poutre import *
+
+#liste des sections disponible pour l optimisation
+listsectionopti=[]
+for a in range(1,13):
+    listsectionopti.append("C%d"%a)
+
+##traitement aster
+DEBUT(PAR_LOT='NON');
+
+MA=LIRE_MAILLAGE(FORMAT='MED',INFO=1);
+
+
+##on generer les groupes de mail qui seront utilise pour loptimisation chaque groupe commence par un O
+##au sein de chaque groupe le profile seras le meme
+gr_cree={}
+gr_cree["i"]=0.
+gr_ini={}
+gr_ini['gr']=['CHS','glini','gldiag','glnew']
+MA=macro_opti_sec_gene_gr(reuse=MA,MAILLAGE=MA,gr_cree=gr_cree,gr_ini=gr_ini,prefixe='O')
+
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MA),);
+
+#pour chaque groupe cree on associe un catalogue de section possible
+gmasection=[]
+print "gr_cree",gr_cree
+for gma in gr_cree['gr']:
+    gmasection.append((gma,listsectionopti))
+
+
+
+cata=catalogue_beta.CATALOGUE_POUTRE();#chargement du catalogue
+cata.section_charge_catalogue(fichiercata)
+
+#print "debug"
+#cata.section_affiche_tout()
+
+
+
+for a in gmasection:
+    cata.affecter_GRMA_TYPE(a[0],"C2")
+
+#test de macro_opti_sec_redu_gr
+#MA=macro_opti_sec_redu_gr(reuse=MA,MAILLAGE=MA,gr_simpli=gr_cree['gr'],association=cata.association)
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MA),);
+
+##on pose les hypotheses
+MO=AFFE_MODELE(MAILLAGE=MA,
+               AFFE=_F(TOUT='OUI',
+                       PHENOMENE='MECANIQUE',
+                       MODELISATION='POU_D_E',),);
+
+MATR=DEFI_MATERIAU(ELAS=_F(E=210E9,
+                           NU=0.3,
+                           RHO=7500),);
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MA,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=MATR,),);
+
+
+CHARG=AFFE_CHAR_MECA(MODELE=MO,
+                      DDL_IMPO=_F(GROUP_NO='RXRYRZ',
+                                  DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  ),
+                      FORCE_POUTRE=_F(GROUP_MA='glini',
+                                      FZ=-1800,),);
+
+
+
+#
+##fin de linitialisation
+##definition de letat
+#
+etat_i={}
+etat_i["MAIL"]=MA
+etat_i["MODELE"]=MO
+etat_i["MATERIAU"]=MATR
+etat_i["CHAM_MATER"]=CHMAT
+etat_i["GMASECTIONPOSSIBLE"]=gmasection
+#
+##ce qui change a chaque foi
+etat_i["CATALOGUE"]=cata
+#
+#
+#CAREL=AFFE_CARA_ELEM(MODELE=etat_i["MODELE"],
+#                         INFO=1,
+#                         POUTRE=etat_i["CATALOGUE"].POUTRE()
+#                        )
+#Resu=MECA_STATIQUE(MODELE=etat_i["MODELE"],
+#                        CHAM_MATER=etat_i["CHAM_MATER"],
+#                        CARA_ELEM=CAREL,
+#                        INST=0,
+#                        EXCIT=_F(CHARGE=CHARG,),
+#                        );
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(RESULTAT=Resu),);
+##definition des parametre
+para={}
+para["CHARGE"]=CHARG
+para["sigmamax"]=140.e6
+para["sigmamin"]=-220.e6
+para["secdeltasigma"]=40.e6
+para["pas_de_reduction"]=False
+para["correction"]=50.
+#
+#
+#
+###test individuel
+##a=CO('a')
+##b=CO('b')
+##macro_opti_sec_crit_compliance(etat=etat_i,fn_para=para,valeur=a,gradient=b)
+##macro_opti_sec_crit_masse(etat=etat_i,fn_para=para,valeur=a,gradient=b)
+##macro_opti_sec_crit_veriflocal(etat=etat_i,fn_para=para,valeur=a,gradient=b)
+#
+###test de verif local
+para["pas_de_reduction"]=False
+contraintes=((macro_opti_sec_crit_veriflocal,para),)
+#etat_f=etat_f=opti_sec.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_i,nb_pas=3,pas_init=0.7,pas_optimal="brent")
+etat_f=etat_f=opti_sec.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_i,nb_pas=5,pas_init=0.4,pas_optimal=None)
+##
+##
+###
+##para["pas_de_reduction"]=True
+##contraintes=((macro_opti_sec_crit_veriflocal,para),)
+##etat_f=opti_sec.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_i,nb_pas=6,pas_init=0.7,pas_optimal="brent")
+##
+####test de descente_gradient
+##para["pas_de_reduction"]=False
+##contraintes=((macro_opti_sec_crit_masse,para),(macro_opti_sec_crit_veriflocal,para))
+##etat_f=opti_sec.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_i,nb_pas=6,pas_init=1,pas_optimal="brent")
+##
+
+CAREL=AFFE_CARA_ELEM(MODELE=etat_f["MODELE"],
+                         INFO=1,
+                         POUTRE=etat_f["CATALOGUE"].POUTRE()
+                        )
+
+##etat_i["CATALOGUE"].section_affiche_tout()
+##etat_f["CATALOGUE"].section_affiche_tout()
+#
+etat_f["CATALOGUE"].sauvegarde_pour_3d(fichiercata3D,MODELE=etat_f["MODELE"],MAILLAGE=etat_f["MAIL"],CHAM_MATER=etat_f["CHAM_MATER"],CARA_ELEM=CAREL)
+
+newcata={}
+newcata['i']=0.
+MA=macro_opti_sec_redu_gr(reuse=MA,MAILLAGE=MA,gr_simpli=gr_cree['gr'],association=etat_f["CATALOGUE"].association,newassociation=newcata)
+IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MA),);
+
+print "newcata",newcata
+
+FIN();

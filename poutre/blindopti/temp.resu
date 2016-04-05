@@ -1,0 +1,426 @@
+                                        -- CODE_ASTER -- VERSION DE DEVELOPPEMENT 11.00.10 --
+
+                                                         VERSION SEQUENTIELLE
+
+                                                    COPYRIGHT  EDF-R&D 1991 - 2011
+
+                                               EXECUTION DU : VE-19-AOUT-2011 13:31:04
+
+                                                    PLATE-FORME : ADPI-LAPTOP     
+
+                                                 NB MAX PROC OpenMP:   1             
+
+                                                      SYSTEME : LINUX           
+
+                                                        CPU : X86_64          
+
+   
+   !------------------------------------------------------------------------------------!
+   ! <A> <SUPERVIS_1>                                                                   !
+   !                                                                                    !
+   !  L'utilisation du mot-clé PAR_LOT='NON' permet d'accéder en lecture et en écriture !
+   !  au contenu des concepts Aster. De ce fait, votre étude est exclue du périmètre    !
+   !  qualifié de Code_Aster puisque toutes ses étapes ne peuvent être certifiées.      !
+   !                                                                                    !
+   !  Conseils :                                                                        !
+   !    - Il n'y a pas particulièrement de risque de résultat faux... sauf si votre     !
+   !      programmation l'introduit.                                                    !
+   !    - Distinguez le calcul lui-même (qui doit sans doute passer en PAR_LOT='OUI')   !
+   !      des post-traitements (qui nécessiteraient le mode PAR_LOT='NON') qui peuvent  !
+   !      être réalisés en POURSUITE.                                                   !
+   !                                                                                    !
+   !                                                                                    !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette                     !
+   ! alarme, vous pouvez obtenir des résultats inattendus !                             !
+   !------------------------------------------------------------------------------------!
+   
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:05 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000004 -           
+ .9000004 TOUT      1.00000E+04  2.07478E-16  4.36557E-15  3.33333E+07  2.08333E+06 -2.91038E-10  1.00000E+02  2.50000E+01 -1.00000E+02 -2.50000E+01  1.03078E+02  1.00000E+04  2.07478E-16  4.36557E-15  3.33333E+07  2.08333E+06 -2.91038E-10  2.08333E+06  3.33333E+07  9.00000E+01  0.00000E+00  0.00000E+00  3.33333E+07  2.08333E+06 -2.91038E-10  6.95605E+06  1.19950E+00  1.19220E+00  7.38772E-04 -5.49655E-04  5.49655E-04  7.38772E-04  5.44875E+09  0.00000E+00  0.00000E+00  2.38378E+01 -4.37373E+01  4.37373E+01  2.38378E+01  2.38378E+01 -4.37373E+01 -         4.65642E+01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:06 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000044 -           
+ .9000044 TOUT      1.00000E+04 -2.84865E-15  1.19371E-16  2.08333E+06  3.33333E+07  3.66384E-10  1.00000E+02  2.50000E+01 -1.00000E+02 -2.50000E+01  1.03078E+02  1.00000E+04 -2.84865E-15  1.19371E-16  2.08333E+06  3.33333E+07  3.66384E-10  2.08333E+06  3.33333E+07  0.00000E+00  0.00000E+00  0.00000E+00  2.08333E+06  3.33333E+07  3.66384E-10  6.95520E+06  1.19949E+00  1.19211E+00  1.07198E-03  7.23192E-04  1.07198E-03  7.23192E-04  5.45310E+09  0.00000E+00  0.00000E+00  2.79876E+01 -1.93025E+01  2.79876E+01 -1.93025E+01  2.79876E+01 -1.93025E+01 -         4.65178E+01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:07 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000084 -           
+ .9000084 TOUT      1.41900E-01 -1.62363E-18 -4.15458E-18  1.28774E-03  2.18644E-03 -3.89635E-20  2.15000E-01  1.65000E-01 -2.15000E-01 -1.65000E-01  2.71017E-01  1.41900E-01 -1.62363E-18 -4.15458E-18  1.28774E-03  2.18644E-03 -3.89635E-20  1.28774E-03  2.18644E-03  0.00000E+00  0.00000E+00  0.00000E+00  1.28774E-03  2.18644E-03 -3.89635E-20  2.70494E-03  1.19573E+00  1.19235E+00 -1.55738E-05  2.45227E-06 -1.55738E-05  2.45227E-06  1.74742E-06  0.00000E+00  0.00000E+00  2.36726E-10 -3.26679E-10  2.36726E-10 -3.26679E-10  2.36726E-10 -3.26679E-10 -         2.36897E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:08 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000124 -           
+ .9000124 TOUT      1.27100E-01  8.85019E-18  5.33144E-20  1.01786E-03  1.78046E-03 -5.66665E-19  2.05000E-01  1.55000E-01 -2.05000E-01 -1.55000E-01  2.57002E-01  1.27100E-01  8.85019E-18  5.33144E-20  1.01786E-03  1.78046E-03 -5.66665E-19  1.01786E-03  1.78046E-03  0.00000E+00  0.00000E+00  0.00000E+00  1.01786E-03  1.78046E-03 -5.66665E-19  2.16107E-03  1.19571E+00  1.19190E+00 -3.57146E-06 -9.39779E-06 -3.57146E-06 -9.39779E-06  1.37059E-06  0.00000E+00  0.00000E+00 -5.47844E-10  5.44575E-10 -5.47844E-10  5.44575E-10 -5.47844E-10  5.44575E-10 -         2.26328E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:08 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000164 -           
+ .9000164 TOUT      6.51000E-02  1.56460E-18 -5.10041E-18  2.39243E-04  5.21343E-04 -7.58756E-20  1.55000E-01  1.05000E-01 -1.55000E-01 -1.05000E-01  1.87216E-01  6.51000E-02  1.56460E-18 -5.10041E-18  2.39243E-04  5.21343E-04 -7.58756E-20  2.39243E-04  5.21343E-04  0.00000E+00  0.00000E+00  0.00000E+00  2.39243E-04  5.21343E-04 -7.58756E-20  5.48670E-04  1.19662E+00  1.19139E+00  2.48843E-05  5.68288E-06  2.48843E-05  5.68288E-06  3.01914E-07  0.00000E+00  0.00000E+00  1.28378E-11 -1.63349E-11  1.28378E-11 -1.63349E-11  1.28378E-11 -1.63349E-11 -         1.60070E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:09 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000204 -           
+ .9000204 TOUT      5.51000E-02 -1.78323E-18 -1.41428E-18  1.65759E-04  3.86159E-04  4.76456E-20  1.45000E-01  9.50000E-02 -1.45000E-01 -9.50000E-02  1.73349E-01  5.51000E-02 -1.78323E-18 -1.41428E-18  1.65759E-04  3.86159E-04  4.76456E-20  1.65759E-04  3.86159E-04  0.00000E+00  0.00000E+00  0.00000E+00  1.65759E-04  3.86159E-04  4.76456E-20  3.88805E-04  1.19667E+00  1.19137E+00  3.00542E-06  9.57241E-06  3.00542E-06  9.57241E-06  2.08938E-07  0.00000E+00  0.00000E+00 -1.38078E-11  2.58632E-11 -1.38078E-11  2.58632E-11 -1.38078E-11  2.58632E-11 -         1.46848E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:10 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000244 -           
+ .9000244 TOUT      4.59000E-02 -1.03342E-18  3.69078E-20  1.10543E-04  2.78842E-04  2.64698E-21  1.35000E-01  8.50000E-02 -1.35000E-01 -8.50000E-02  1.59531E-01  4.59000E-02 -1.03342E-18  3.69078E-20  1.10543E-04  2.78842E-04  2.64698E-21  1.10543E-04  2.78842E-04  0.00000E+00  0.00000E+00  0.00000E+00  1.10543E-04  2.78842E-04  2.64698E-21  2.65320E-04  1.19695E+00  1.19049E+00  1.49010E-05 -6.90423E-06  1.49010E-05 -6.90423E-06  1.38737E-07  0.00000E+00  0.00000E+00  2.41626E-11 -3.15346E-11  2.41626E-11 -3.15346E-11  2.41626E-11 -3.15346E-11 -         1.34206E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:11 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000284 -           
+ .9000284 TOUT      3.75000E-02  1.01644E-19  2.82344E-20  7.03125E-05  1.95312E-04  7.01449E-22  1.25000E-01  7.50000E-02 -1.25000E-01 -7.50000E-02  1.45774E-01  3.75000E-02  1.01644E-19  2.82344E-20  7.03125E-05  1.95312E-04  7.01449E-22  7.03125E-05  1.95312E-04  0.00000E+00  0.00000E+00  0.00000E+00  7.03125E-05  1.95312E-04  7.01449E-22  1.73614E-04  1.19725E+00  1.19067E+00 -7.15570E-08  3.08144E-09 -7.15570E-08  3.08144E-09  8.77675E-08  0.00000E+00  0.00000E+00  7.67534E-14 -3.46421E-14  7.67534E-14 -3.46421E-14  7.67534E-14 -3.46421E-14 -         1.21775E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:11 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000324 -           
+ .9000324 TOUT      1.13100E-01  5.51208E-18 -7.18967E-19  7.92642E-04  1.43354E-03 -5.92923E-21  1.95000E-01  1.45000E-01 -1.95000E-01 -1.45000E-01  2.43002E-01  1.13100E-01  5.51208E-18 -7.18967E-19  7.92642E-04  1.43354E-03 -5.92923E-21  7.92642E-04  1.43354E-03  0.00000E+00  0.00000E+00  0.00000E+00  7.92642E-04  1.43354E-03 -5.92923E-21  1.70508E-03  1.19616E+00  1.19208E+00  3.96124E-06  2.34492E-05  3.96124E-06  2.34492E-05  1.04156E-06  0.00000E+00  0.00000E+00 -2.79483E-10  2.60480E-10 -2.79483E-10  2.60480E-10 -2.79483E-10  2.60480E-10 -         2.11244E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:12 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000364 -           
+ .9000364 TOUT      9.99000E-02 -4.00200E-18 -2.30624E-18  6.06893E-04  1.13969E-03 -5.42101E-20  1.85000E-01  1.35000E-01 -1.85000E-01 -1.35000E-01  2.29020E-01  9.99000E-02 -4.00200E-18 -2.30624E-18  6.06893E-04  1.13969E-03 -5.42101E-20  6.06893E-04  1.13969E-03  0.00000E+00  0.00000E+00  0.00000E+00  6.06893E-04  1.13969E-03 -5.42101E-20  1.32166E-03  1.19623E+00  1.19116E+00  1.44114E-05  6.18421E-06  1.44114E-05  6.18421E-06  7.91523E-07  0.00000E+00  0.00000E+00  2.64129E-10 -3.11781E-10  2.64129E-10 -3.11781E-10  2.64129E-10 -3.11781E-10 -         2.01553E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:13 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000404 -           
+ .9000404 TOUT      8.75000E-02  6.96987E-19 -2.32329E-19  4.55729E-04  8.93229E-04 -5.33631E-20  1.75000E-01  1.25000E-01 -1.75000E-01 -1.25000E-01  2.15058E-01  8.75000E-02  6.96987E-19 -2.32329E-19  4.55729E-04  8.93229E-04 -5.33631E-20  4.55729E-04  8.93229E-04  0.00000E+00  0.00000E+00  0.00000E+00  4.55729E-04  8.93229E-04 -5.33631E-20  1.00808E-03  1.19586E+00  1.19160E+00  3.05723E-06  2.74717E-05  3.05723E-06  2.74717E-05  5.83353E-07  0.00000E+00  0.00000E+00 -1.51367E-11  1.92280E-11 -1.51367E-11  1.92280E-11 -1.51367E-11  1.92280E-11 -         1.85128E-01
+
+   
+   !----------------------------------------------------------------!
+   ! <A> <MODELISA7_9>                                              !
+   !                                                                !
+   !  le GROUP_NO :  ext  existe deja, on ne le crée donc pas.      !
+   !                                                                !
+   !                                                                !
+   ! Ceci est une alarme. Si vous ne comprenez pas le sens de cette !
+   ! alarme, vous pouvez obtenir des résultats inattendus !         !
+   !----------------------------------------------------------------!
+   
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 11.00.10 CONCEPT seccara CALCULE LE 19/08/2011 A 13:31:14 DE TYPE         
+#TABLE_SDASTER                                                                   
+ LIEU     ENTITE   AIRE_M       CDG_X_M      CDG_Y_M      IX_G_M       IY_G_M       IXY_G_M      Y_MAX        Z_MAX        Y_MIN        Z_MIN        R_MAX        AIRE         CDG_X        CDG_Y        IX_G         IY_G         IXY_G        IY_PRIN_G    IZ_PRIN_G    ALPHA        X_P          Y_P          IX_P         IY_P         IXY_P        CT           AY           AZ           EY           EZ           PCTX         PCTY         JG           KY           KZ           IXR2         IYR2         IYR2_PRIN_G  IZR2_PRIN_G  IXR2_P       IYR2_P       MAILLAGE RT          
+ -        -        -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            -            .9000444 -           
+ .9000444 TOUT      7.59000E-02  1.33918E-19  1.11599E-19  3.34593E-04  6.88793E-04 -8.38563E-20  1.65000E-01  1.15000E-01 -1.65000E-01 -1.15000E-01  2.01122E-01  7.59000E-02  1.33918E-19  1.11599E-19  3.34593E-04  6.88793E-04 -8.38563E-20  3.34593E-04  6.88793E-04  0.00000E+00  0.00000E+00  0.00000E+00  3.34593E-04  6.88793E-04 -8.38563E-20  7.53023E-04  1.19636E+00  1.19116E+00  6.93008E-17  1.22685E-16  6.91669E-17  1.22574E-16  4.27780E-07  0.00000E+00  0.00000E+00 -5.95053E-23 -1.51477E-23 -5.95053E-23 -1.51477E-23  1.29383E-22  3.06386E-22 -         1.74490E-01
+
+
+   !-----------------------------------------------------------------------!
+   !   Liste des alarmes émises lors de l'exécution du calcul.             !
+   !                                                                       !
+   !   Les alarmes que vous avez choisies d'ignorer sont précédées de (*). !
+   !   Nombre d'occurrences pour chacune des alarmes :                     !
+   !          MODELISA7_9          émise   12 fois                         !
+   !          SUPERVIS_1           émise    1 fois                         !
+   !-----------------------------------------------------------------------!
+
+ <I> <FIN> FERMETURE DE LA BASE "GLOBALE" EFFECTUEE.
+ <I> <FIN> ARRET NORMAL DANS "FIN" PAR APPEL A "JEFINI".
+  
+ <I> <FIN> MEMOIRE JEVEUX MINIMALE REQUISE POUR L'EXECUTION :                      23.41 Mo
+ <I> <FIN> MAXIMUM DE MEMOIRE UTILISEE PAR LE PROCESSUS LORS DE L'EXECUTION :     277.36 Mo
+
+ ********************************************************************************
+ * COMMAND                  :       USER :     SYSTEM :   USER+SYS :    ELAPSED *
+ ********************************************************************************
+ * init (jdc)               :      12.71 :       1.37 :      14.08 :      11.67 *
+ *  . compile               :       0.00 :       0.00 :       0.00 :       0.00 *
+ *  . exec_compile          :      11.32 :       1.27 :      12.59 :      10.18 *
+ * DEBUT                    :       0.01 :       0.05 :       0.06 :       0.04 *
+ * PRE_GMSH                 :       0.03 :       0.00 :       0.03 :       0.03 *
+ * LIRE_MAILLAGE            :       0.06 :       0.00 :       0.06 :       0.06 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.88 :       0.05 :       0.93 :       0.75 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.02 :       0.00 :       0.02 :       0.02 *
+ * LIRE_MAILLAGE            :       0.06 :       0.00 :       0.06 :       0.06 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * MACR_CARA_POUTRE         :       0.85 :       0.07 :       0.92 :       0.74 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.69 :       0.09 :       0.78 :       0.58 *
+ * DETRUIRE                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.80 :       0.04 :       0.84 :       0.65 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.69 :       0.11 :       0.80 :       0.62 *
+ * DETRUIRE                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.03 :       0.00 :       0.03 :       0.03 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * MACR_CARA_POUTRE         :       0.70 :       0.04 :       0.74 :       0.56 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.03 :       0.00 :       0.03 :       0.03 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.01 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.01 *
+ * MACR_CARA_POUTRE         :       0.68 :       0.07 :       0.75 :       0.55 *
+ * DETRUIRE                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.73 :       0.03 :       0.76 :       0.57 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.03 :       0.00 :       0.03 :       0.03 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * MACR_CARA_POUTRE         :       0.70 :       0.08 :       0.78 :       0.59 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * CREA_MAILLAGE            :       0.00 :       0.00 :       0.00 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.88 :       0.09 :       0.97 :       0.78 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * PRE_GMSH                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * LIRE_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.00 :       0.00 :       0.00 *
+ * MACR_CARA_POUTRE         :       0.70 :       0.07 :       0.77 :       0.59 *
+ * DETRUIRE                 :       0.01 :       0.00 :       0.01 :       0.01 *
+ * PRE_GMSH                 :       0.00 :       0.00 :       0.00 :       0.01 *
+ * LIRE_MAILLAGE            :       0.00 :       0.02 :       0.02 :       0.03 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_FICHIER             :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.00 :       0.01 :       0.01 :       0.01 *
+ * CREA_MAILLAGE            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEFI_GROUP               :       0.01 :       0.00 :       0.01 :       0.01 *
+ * MACR_CARA_POUTRE         :       0.75 :       0.03 :       0.78 :       0.59 *
+ * DETRUIRE                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * FIN                      :       0.01 :       0.02 :       0.03 :       0.03 *
+ *  . part Superviseur      :       5.22 :       0.55 :       5.77 :       5.70 *
+ *  . part Fortran          :       7.44 :       0.82 :       8.26 :       5.92 *
+ ********************************************************************************
+ * TOTAL_JOB                :      12.71 :       1.37 :      14.08 :      11.67 *
+ ********************************************************************************
+

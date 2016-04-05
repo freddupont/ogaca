@@ -1,0 +1,19 @@
+Point(1) = {0, 0, 0, 1.0};
+Point(2) = {3, 0, 0, 1.0};
+Point(3) = {3, 0, 0.4, 1.0};
+Point(4) = {3, 0, 0.6, 1.0};
+Point(5) = {3, 0, 1, 1.0};
+Point(6) = {0, 0, 1, 1.0};
+Line(1) = {1, 2};
+Line(2) = {2, 3};
+Line(3) = {3, 4};
+Line(4) = {4, 5};
+Line(5) = {5, 6};
+Line(6) = {6, 1};
+Line Loop(7) = {5, 6, 1, 2, 3, 4};
+Plane Surface(8) = {7};
+Physical Line('Fix') = {6};
+Physical Line('Free') = {1, 2, 4, 5};
+Physical Line('Load') = {3};
+Physical Surface('Plate') = {8};
+

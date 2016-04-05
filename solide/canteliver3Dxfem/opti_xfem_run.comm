@@ -1,0 +1,229 @@
+## optimisation d un canteliver en 3D
+## fichier mis au point par frederic renou
+#################################################
+
+#Definition des constantes qui parametrise le calcul
+INCLUDE(UNITE=2);
+
+#Importation des bibliotheque
+from Macro.opti_xfem import XFEM_CALETEVAL,ponder,approx_sign,LVL_SAV
+
+
+DEBUT(PAR_LOT='NON');
+
+EXEC_LOGICIEL(LOGICIEL='cp fort.1 '+para['sortiepath']+'temp.temp',);
+EXEC_LOGICIEL(LOGICIEL='rm '+para['sortiepath']+'*')
+fopti=file('fort.3',"w");
+fopti.write('Fichier precisant les resultats de sortie de l optimisation\n');
+
+########################################################################
+##Définition des model de calcul et des materiaux
+########################################################################
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_PEAU_3D=_F(GROUP_MA=('Group_1','Group_2','Group_3'),),);
+MAIL=DEFI_GROUP(reuse=MAIL,MAILLAGE=MAIL,CREA_GROUP_MA=_F(NOM="enri",UNION=('Group_1v','Group_2v','Group_3v','VOLv')));
+
+#Creation du model de base
+MODEB=AFFE_MODELE(MAILLAGE=MAIL,AFFE=_F(GROUP_MA=('enri'),PHENOMENE='MECANIQUE',MODELISATION='3D',),);
+
+#creation du champ nul en tout point
+CHZERO=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_R', MODELE=MODEB,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE=0.0));
+########################################################################
+##Recuperation de la level set initial
+########################################################################
+#utilisation du champ decris a l unite 21
+CHLVL=LIRE_CHAMP(TYPE_CHAM='NOEU_NEUT_R',UNITE=21,MAILLAGE=MAIL,NOM_MED='CHLVL___________________________',NOM_CMP_IDEM='OUI',)
+
+
+###########################################################################
+##insertion des donnees physiques
+##########################################################################
+INCLUDE(UNITE=4);
+
+
+##########################################################################
+##Creation de la fissure
+##########################################################################
+fiss=DEFI_FISS_XFEM(MODELE=MODEB,
+		TYPE_DISCONTINUITE = 'INTERFACE',
+		DEFI_FISS=_F(
+			CHAM_NO_LSN=CHLVL,
+			),
+		GROUP_MA_ENRI='enri',
+		CHAM_DISCONTINUITE  ="DEPL",
+		#INFO=1,
+		);
+		
+fissM=PROPA_CHLVL(MODELE=MODEB,DA_MAX=200,RAYON=200,FISS_PROP=fiss,ITERMAX=1,METHODE ="SIMPLEXE",INFO=2)
+
+#affectation de la table de critere
+TCRIT=CREA_TABLE(LISTE=(	_F(PARA='casdecharge',LISTE_I=(0,1,),),
+				_F(PARA='critere0',LISTE_R=(1,1,),),
+	),);
+
+#affectation de la table de fnobjectif
+TAB_FNOB=CREA_TABLE(LISTE=(	_F(PARA='fnobject',LISTE_R=(0,),),
+				_F(PARA='nbiter',LISTE_I=(0,),),
+		),);
+
+
+#calcul et evalutation de la derive de forme
+fopti.write('initialisation des objets faites\n');
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+
+toto=XFEM_CALETEVAL(MAIL=MAIL,MODEB=MODEB,TBFNBAR=CO("tabsort"),VOLOBJ=1,TCRITOUT=CO("tabcrit0"),NBITER=0,CHDFO=CO("CHDFO"),XFEM_LVL=fiss,para=para,
+		CONTR=(
+			_F(CHARGE=CHARJ1,TYPE="COMPLIANCE",CONTOBJ=1),
+			#_F(CHARGE=CHARJ2,TYPE="COMPLIANCE",CONTOBJ=1),
+		))
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(toto),),);
+fopti=file('fort.3',"a");
+
+
+#######Lissage du champs de derive de forme
+CHDFOL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEB,
+				ASSE=(	
+				_F(TOUT='OUI', CHAM_GD=CHDFO,CUMUL='NON'),
+				_F(GROUP_MA=para['GRN_DZ'], CHAM_GD=CHZERO,CUMUL='NON',),
+					), )
+LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHDFOL,NOM="CHDFOL",ITER=0,para=para);
+
+
+#Affichage des different critere
+tatemp=tabcrit0.EXTR_TABLE();
+for k in range(0, len(tatemp.critere)):
+	fopti.write( "lvltest: critere initial n%d valeur %g\n" %(k,tatemp.critere[k]));
+	
+#mise a jour de la table des fonction objectif
+TAB_FNOB=CALC_TABLE(reuse =TAB_FNOB,TABLE=TAB_FNOB,ACTION=_F(OPERATION='COMB',TABLE=tabsort, NOM_PARA=('nbiter') ) )
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(tabsort),),);
+tatemp=TAB_FNOB.EXTR_TABLE();
+objectif=tatemp.fnobject[0];
+fopti.write('opti iteration initial objectifm:%g \n'%(objectif))
+
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+fopti=file('fort.3',"a");
+
+
+#enregistrement du pas initial
+pas=para['pasinit'];
+objectifm2=objectif;
+
+for k in range(1,para['nbiter']+1):
+
+	
+	fopti.write('opti Debut de la boucle%d \n'%k)
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	fopti=file('fort.3',"a");
+	
+	#impression du meilleur champ actuel
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVL,),),);
+	CHLVL=CREA_CHAMP(OPERATION='EXTR',FISSURE=fiss,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+	LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHLVL,NOM="CHLVL",ITER=k,para=para);
+	
+	#impression de la derive de forme  actuel
+	
+
+	#mise a jour du cham de lvl set
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fissM,),),);
+	#-1 car la propagation du volume est inverse
+	fissM=PROPA_CHLVL(MODELE=MODEB,PAS=-1*pas,DA_MAX=200,RAYON=100,FISS_PROP=fiss,CH_VITN=CHDFOL,METHODE ="SIMPLEXE",INFO=2)
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVL,),),);
+	CHLVL=CREA_CHAMP(OPERATION='EXTR',FISSURE=fissM,TYPE_CHAM='NOEU_NEUT_R',NOM_CHAM='LNNO',);
+	
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fissM,),),);
+	fissM=DEFI_FISS_XFEM(MODELE=MODEB,
+			TYPE_DISCONTINUITE = 'INTERFACE',
+			DEFI_FISS=_F(
+				CHAM_NO_LSN=CHLVL,
+				),
+			GROUP_MA_ENRI='enri',
+			CHAM_DISCONTINUITE  ="DEPL",
+			#INFO=1,
+			);
+
+	
+	LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHLVL,NOM="CHLVLM",ITER=k,para=para);
+	
+	
+	
+	#calcul et evalutation de la derive de forme
+	fopti.close();
+	EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHDFO),),);
+	toto=XFEM_CALETEVAL(MAIL=MAIL,MODEB=MODEB,TBFNBAR=CO("tabsort"),VOLOBJ=1,TCRITOUT=CO("tabcrit"),NBITER=k,CHDFO=CO("CHDFO"),XFEM_LVL=fissM,para=para,
+			CONTR=(
+				_F(CHARGE=CHARJ1,TYPE="COMPLIANCE",CONTOBJ=1),
+				#_F(CHARGE=CHARJ2,TYPE="COMPLIANCE",CONTOBJ=1),
+			))
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(toto,tabcrit),),);
+	fopti=file('fort.3',"a");
+
+	#mise a jour de la table des fonction objectif
+	TAB_FNOB=CALC_TABLE(reuse =TAB_FNOB,TABLE=TAB_FNOB,ACTION=_F(OPERATION='COMB',TABLE=tabsort, NOM_PARA=('nbiter') ) )
+	DETRUIRE(INFO=1,CONCEPT=_F(NOM=(tabsort),),);
+	tatemp=TAB_FNOB.EXTR_TABLE();
+	print tatemp
+	objectifm=tatemp.fnobject[k];
+	
+	fopti.write('opti iteration objectif actuel %g objectifm:%g pas%g\n'%(objectif,objectifm,pas))
+
+	if objectifm>objectif*para['tolobj'] and objectifm2!=objectifm and pas>para['pasmin']:
+		pas=pas/2.;
+		fopti.write('opti Refus du pas de descente nouveaux pas%g\n'%pas)
+		objectifm2=objectifm;
+		
+
+		#on diminue le pas de descent
+	else:
+		if objectif==objectifm:
+			pas=pas*3.;
+			fopti.write('opti pas trop faible la fonction n a pas bouger meme objectif(nouveau pas %g) nouveau lissage %g\n'%(pas,para['eps2']));
+		
+		#if objectifm2==objectifm:
+			#para['eps2']=para['eps2']/2;
+			#fopti.write(' opti attention la forme na pas bouge depuis le dernier pas mais l objectif est different du precedent mauvais lissage(pas %g; para epsi2:%g)\n'%(pas,para['eps2']))
+		
+		fopti.write(' opti Acceptation du pas de descente\n')
+		pas=pas*1.1;
+		objectif=objectifm;
+		
+		
+		#mise a jour du gradient
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHDFOL),),);
+	
+		LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHDFO,NOM="CHDFOpreslissage",ITER=k,para=para);
+	
+		#######Lissage du champs de sortie
+		CHDFOL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEB,
+						ASSE=(	
+						_F(TOUT='OUI', CHAM_GD=CHDFO,CUMUL='NON'),
+						_F(GROUP_MA=para['GRN_DZ'], CHAM_GD=CHZERO,CUMUL='NON',),
+							), )
+		LVL_SAV(MAILLAGE=MAIL,CHAM_GD=CHDFOL,NOM="CHDFOpostlissage",ITER=k,para=para);
+	
+		#################################
+		#Mise a jour de la level set
+		DETRUIRE(INFO=1,CONCEPT=_F(NOM=(fiss),),);
+		fiss=PROPA_CHLVL(MODELE=MODEB,DA_MAX=200,RAYON=200,FISS_PROP=fissM,ITERMAX=1,METHODE ="SIMPLEXE",INFO=2)
+
+		#fiss copier une fissure ici
+		#CHLVL=CREA_CHAMP( OPERATION='ASSE', TYPE_CHAM='NOEU_NEUT_R',MODELE=MODEMEC, 
+			#ASSE=(	_F(TOUT='OUI', CHAM_GD=CHLVLM,CUMUL='OUI', COEF_R = 1),
+				#), )
+
+	
+	#DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHLVLM),),);
+
+
+fopti.write('opti fin de loptimisation objectifm:%f \n'%(objectif))
+
+fopti.close();
+EXEC_LOGICIEL(LOGICIEL='cp fort.3 '+para['sortiepath']+'opti.temp.mess',);#sauvegarde du fichier
+fopti=file('fort.3',"a");
+
+FIN();

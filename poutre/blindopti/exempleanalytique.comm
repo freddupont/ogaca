@@ -1,0 +1,173 @@
+#########################################################
+#exempeleanalytique.comm
+#test de blind opti
+#simple test analytique
+# ======================================================================
+# COPYRIGHT (C) 2011  FREDERIC RENOU frederic.renou.pb@gmail.com
+# THIS PROGRAM IS FREE SOFTWARE; YOU CAN REDISTRIBUTE IT AND/OR MODIFY
+# IT UNDER THE TERMS OF THE GNU GENERAL PUBLIC LICENSE AS PUBLISHED BY
+# THE FREE SOFTWARE FOUNDATION; EITHER VERSION 2 OF THE LICENSE, OR
+# (AT YOUR OPTION) ANY LATER VERSION.
+#
+# THIS PROGRAM IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT
+# WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE GNU
+# GENERAL PUBLIC LICENSE FOR MORE DETAILS.
+#
+# YOU SHOULD HAVE RECEIVED A COPY OF THE GNU GENERAL PUBLIC LICENSE
+# ALONG WITH THIS PROGRAM;
+# ======================================================================
+
+
+#chargement de blind_opti
+bibli_dir='/home/fred/asteretude/blindopti/bibli'
+import sys
+#importation du catalogue
+sys.path.append(bibli_dir)
+import blind_opti
+
+#chargement des macro support analitique
+from opti_analytique import *
+
+
+##traitement aster
+DEBUT(PAR_LOT='NON');
+
+table=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(1.,1.))));
+etat_ini={}
+etat_ini['valeurs']=table
+
+###Fonction contrainte comme simple fonction annalytique
+def macro_opti_ana_crit1_prod(self,gradient,valeur,**args):
+    if (gradient!=None):
+        if isinstance(gradient,CO):
+            print "macro_opti_ana_crit1_prod:grad"
+            self.type_sdprod(gradient,table_sdaster)
+    self.type_sdprod(valeur,table_sdaster)
+    return None
+def macro_opti_ana_crit1_ops(self,valeur,etat,gradient,fn_para,**args):
+    self.set_icmd(1)
+    self.DeclareOut('valeur',valeur)
+    CREA_TABLE	= self.get_cmd('CREA_TABLE')
+    x=etat['valeurs']['R',1]
+    y=etat['valeurs']['R',2]
+    
+    valeur=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(x-fn_para['opti_vale'])**4+y**2,)));
+    aster.affiche('MESSAGE',  'macro_opti_ana_crit1:Valeur du retour %f'%valeur["R",1])
+    if (gradient==None):
+        #print "macro_opti_ana_crit1_ops:no grad"
+        return 0
+    else:
+        #print "macro_opti_ana_crit1_ops:grad"
+        self.DeclareOut('gradient',gradient)
+        gradient=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(4*(x-fn_para['opti_vale'])**3,2*y))));
+        #print "gradient['R',1]",gradient['R',1]
+        return 0
+
+macro_opti_ana_crit1= MACRO (nom="macro_opti_ana_crit1", op=macro_opti_ana_crit1_ops,
+                   fr="Sauvegarde du champ", sd_prod=macro_opti_ana_crit1_prod,
+                   #MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+                   etat		    =SIMP(statut='o',typ=str,max='**'),
+                   fn_para		    =SIMP(statut='o',typ=str,max='**'),
+                   valeur		=SIMP(statut='o',typ=CO),
+                   gradient		=SIMP(statut='f',typ=CO),
+                   );
+
+def macro_opti_ana_crit2_prod(self,gradient,valeur,**args):
+    if (gradient!=None):
+        if isinstance(gradient,CO):
+            #print "macro_opti_ana_crit2_prod:grad"
+            self.type_sdprod(gradient,table_sdaster)
+    self.type_sdprod(valeur,table_sdaster)
+    return None
+def macro_opti_ana_crit2_ops(self,valeur,etat,gradient,fn_para,**args):
+    self.set_icmd(1)
+    self.DeclareOut('valeur',valeur)
+    CREA_TABLE	= self.get_cmd('CREA_TABLE')
+    x=etat['valeurs']['R',1]
+    y=etat['valeurs']['R',2]
+    
+    valeur=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=((x**2+y**2-fn_para['opti_vale'])**2+y,))));
+    aster.affiche('MESSAGE',  'macro_opti_ana_crit2:Valeur du retour c%f'%valeur["R",1])
+    if (gradient==None):
+        #print "macro_opti_ana_crit2_ops:no grad"
+        return 0
+    else:
+        #print "macro_opti_ana_crit2_ops:grad"
+        self.DeclareOut('gradient',gradient)
+        gradient=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(2*(x**2+y**2-fn_para['opti_vale'])*2*x,4*y*(x**2+y**2-fn_para['opti_vale'])+1))));
+        #print "gradient['R',1]",gradient['R',1]
+        return 0
+
+macro_opti_ana_crit2= MACRO (nom="macro_opti_ana_crit2", op=macro_opti_ana_crit2_ops,
+                   fr="Sauvegarde du champ", sd_prod=macro_opti_ana_crit2_prod,
+                   #MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+                   etat		    =SIMP(statut='o',typ=str,max='**'),
+                   fn_para		    =SIMP(statut='o',typ=str,max='**'),
+                   valeur		=SIMP(statut='o',typ=CO),
+                   gradient		=SIMP(statut='f',typ=CO),
+                   );
+
+def macro_opti_ana_crit3_prod(self,gradient,valeur,**args):
+    if (gradient!=None):
+        if isinstance(gradient,CO):
+            #print "macro_opti_ana_crit3_prod:grad"
+            self.type_sdprod(gradient,table_sdaster)
+    self.type_sdprod(valeur,table_sdaster)
+    return None
+def macro_opti_ana_crit3_ops(self,valeur,etat,gradient,fn_para,**args):
+    self.set_icmd(1)
+    self.DeclareOut('valeur',valeur)
+    CREA_TABLE	= self.get_cmd('CREA_TABLE')
+    x=etat['valeurs']['R',1]
+    y=etat['valeurs']['R',2]
+    #aster.affiche('MESSAGE',  "x"+str(x)+" y"+str(y))
+    
+    valeur=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(5.-y,))));
+    aster.affiche('MESSAGE',  'macro_opti_ana_crit3:Valeur du retour c%f'%valeur["R",1])
+    if (gradient==None):
+        #print "macro_opti_ana_crit3_ops:no grad"
+        return 0
+    else:
+        #print "macro_opti_ana_crit3_ops:grad"
+        #print "test1"
+        self.DeclareOut('gradient',gradient)
+        #print "test2"
+        gradient=CREA_TABLE(LISTE=(	_F(PARA='R',LISTE_R=(0.,-1.))));
+        #print "gradient['R',1]",gradient['R',1]
+        return 0
+
+macro_opti_ana_crit3= MACRO (nom="macro_opti_ana_crit3", op=macro_opti_ana_crit3_ops,
+                   fr="Sauvegarde du champ", sd_prod=macro_opti_ana_crit3_prod,
+                   #MAIL		=SIMP(statut='o',typ=maillage_sdaster),
+                   etat		    =SIMP(statut='o',typ=str,max='**'),
+                   fn_para		    =SIMP(statut='o',typ=str,max='**'),
+                   valeur		=SIMP(statut='o',typ=CO),
+                   gradient		=SIMP(statut='f',typ=CO),
+                   );
+
+
+
+#######################
+#mise en route de l etude
+#definition des contrainte
+para={'opti_vale':50.}
+contraintes=((macro_opti_ana_crit1,para),)
+
+##lancement de l etude
+#opti.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_ini,nb_pas=2,pas_init=1)
+#opti.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_ini,nb_pas=10,pas_init=1,pas_optimal=True,)
+
+contraintes=((macro_opti_ana_crit1,para),(macro_opti_ana_crit3,para),)
+
+#cas avec une foncion barriere sur les contraintes
+#barriere=blind_opti_v1.barriere_fred(1,0.1)
+barriere=blind_opti.barriere_log(seuil=0.1)
+#
+opti_analytique.class_barriere=barriere
+#opti.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_ini,nb_pas=10,pas_init=1,pas_optimal=True)
+#opti.class_barriere=None
+opti_analytique.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_ini,nb_pas=30,pas_init=1.,pas_optimal="brent",adaptative_penality=True)
+#opti.descente_gradient(tab_fn_contrainte=contraintes,etat_init=etat_ini,nb_pas=40,pas_init=50.,pas_optimal="armijo",adaptative_penality=True)
+
+FIN();

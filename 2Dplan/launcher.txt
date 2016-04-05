@@ -1,0 +1,6 @@
+java=C:\Program Files (x86)\Java\jre6\bin\java.exe
+waster=C:\waster-10.3.3-1\runtime\waster.bat
+comm=C:\waster-10.3.3-1\astersimp\SIMP.comm
+med=C:\waster-10.3.3-1\astersimp\platecoarse.med
+fort19=C:\waster-10.3.3-1\Minimalarea\twocircleareaQ9.msh
+temp=Temp

@@ -1,0 +1,99 @@
+#fichier de parametre
+#################################################
+#Definition des constantes qui parametrise le calcul
+
+#ces constantes sont rentré dans un dictionnaire pour pouvoir passer dans les fonctions?
+para={};
+
+#################################################
+#INITIALISATION
+#################################################
+
+#################################################
+#Boucle
+#################################################
+para['pasinit']=10;
+para['pasmin']=.5;
+para['nbiter']=10;
+
+#indique la tolerance a effectuer un pas en fonction de la reduction de la fonction objectif
+para['tolobj']= 1.02;
+#para['tolobj']= 1.05;
+#para['tolobj']= 1.005;
+
+
+#################################################
+#LVL_SAV
+#################################################
+#mise au point du nombre de sauvegarde
+#chemin des differents fichiers de sauvegarde 
+#attention tout ce qui ce trouve dans le repertoir est supprimer
+para['sortiepath']='/home/fred/asteropti/canteliver3Dxfem/outfile/'
+para['freqsav']=1
+
+
+
+#################################################
+#LVL_CALETEVAL
+#parametre de reinitialisation de la lvlset vers la fonction distance signe
+##############################################
+
+#Methode: barriere des contraintes
+#divergence de la fonction contrainte
+para['nbar']=2;
+
+#Objectif
+para['lag']=0.2;#plus cette valeur est grande moins on auras de volume
+para['faccompl']=.9;
+
+
+
+
+
+
+################################################
+##ce n'est pas utilise
+##non utilise
+
+#divergence de la fonction contrainte
+#para['errc']=0.5;
+#para['nbforce']=1;
+
+#para['beta1']=((1+para['nbforce'])*(1+para['errc'])-1)/(1-(1+para['nbforce'])); 
+#para['beta2']=(para['beta1']+1)/(para['beta1']);
+#para['beta3']=-(para['beta1']+1)*log(-para['beta1']-1)+para['beta2']/2;
+#para['beta4']=(para['beta1']+1)*(log(-para['beta1']-para['errc']-1))-para['beta2']*(-((1+para['errc'])**2)/2+(1+para['errc']))+para['beta3']-(2+para['beta2'])*(1+para['errc'])-(1+para['errc'])**2/2;
+	
+
+
+##pour eviter des champ trop faible
+#para['amplicomp']=1E9
+
+##constante pour brentmethode
+#para['tol']=0.1; #tolerance  d implantation du min seul valeur a changer en pratique
+#para['ITMAX']=100;
+#para['ZEPS']=0.00001;
+#para['CGOLD']=0.381966;
+##constante pour braketing the minimum
+#para['GOLD']=1.618034;
+#para['TINY']=0.001;
+#para['GLIMIT']=30;
+
+#para['activeconjugate']=0;##0 pour desactiver
+
+##critere d adaptation du maillage
+#para['adaptfreq']=3;
+#para['mailh']=5;
+
+##chargement('G_2D_1','G_2D_2','G_2D_3','G_2D_4')
+#para['Mcharge']=('G_2D_3','G_2D_4','G_2D_5','G_2D_6')
+#para['Mprot']=('G_2D_1','G_2D_3','G_2D_4','G_2D_5','G_2D_6')
+#para['Mencastre']=('G_2D_1')
+#para['Mopti']=('G_2D_2');
+##encastrement'G_2D_2'
+##surface opti GRMA_OPT']='G_2D_1'
+
+#para['pasfixe']=1;##1 le pas vau tj pasinit
+#para['pasmin']=0.00001;
+#para['pasmax']=4.;
+

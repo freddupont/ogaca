@@ -1,0 +1,398 @@
+#note le calcul en noeu neut semble le plus performant
+
+#importation de la bibliotheque
+bibli_dir='/home/fred/asteretude/kenyatta/bibli'
+
+import sys
+
+#importation du catalogue
+sys.path.append(bibli_dir)
+import IOFile
+
+import aster
+
+DEBUT(PAR_LOT="NON")
+
+#test of scipy.optimize.brent function
+#utile pour determiner le lagrangien du volume
+from scipy.optimize import brent
+#def power(x):
+#     return (x-4)**4+5*(x**2);
+#print brent(power,brack=(0.,1.),full_output=True)
+#print brent(power,brack=(0.,1.),full_output=True,maxiter=2)
+
+
+#########################################################################
+#classical study
+#get the mesh
+ACIER=DEFI_MATERIAU(ELAS=_F(E=210000000000.0,
+              NU=0.3,
+              RHO=7800.0,),);
+
+MAIL=LIRE_MAILLAGE(FORMAT='MED',);
+MAIL=MODI_MAILLAGE(reuse =MAIL,MAILLAGE=MAIL,ORIE_PEAU_3D=_F(GROUP_MA=('toutface'),),);
+
+MODE=AFFE_MODELE(MAILLAGE=MAIL,
+          AFFE=_F(TOUT='OUI',
+           PHENOMENE='MECANIQUE',
+           MODELISATION='3D',),);
+
+MATE=AFFE_MATERIAU(MAILLAGE=MAIL,
+            AFFE=_F(TOUT='OUI',
+             MATER=ACIER,),);
+
+#caraelem=AFFE_CARA_ELEM(MODELE=MODE,
+#          COQUE=_F(GROUP_MA='tout',
+#         EPAIS=0.01,),);
+
+charZ=AFFE_CHAR_MECA(MODELE=MODE,
+             DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+             FORCE_FACE =_F (GROUP_MA='forc',FZ=-10.,),);
+tabchar=[charZ]
+
+#en cas de cas de charge multiple
+#charX=AFFE_CHAR_MECA(MODELE=MODE,
+#             DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+#             FORCE_FACE =_F (GROUP_MA='forc',FX=10,),);
+#charY=AFFE_CHAR_MECA(MODELE=MODE,
+#             DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+#             FORCE_FACE =_F (GROUP_MA='forc',FY=10,),);
+#tabchar=[charZ,charX,charY]
+
+
+#pour des tests
+#resu=MECA_STATIQUE(MODELE=MODE,
+#     CHAM_MATER=MATE,
+#     #CARA_ELEM=pl,
+#     EXCIT=_F(CHARGE=char,),
+#     );
+#
+##RESUM=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='DEPL',AFFE=_F(CHAM_GD=ppCH2,MODELE=MODE,INST=0),);
+#IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MAIL,RESULTAT=resu,),);
+#
+##FIN()
+
+#########################################################################
+#begin of simp algo
+#########################################################################
+
+#parameter
+volumeratio=0.2
+Eini=210.e9
+#Rhoini=7800
+Precision=1.e-6
+
+premiereiter=1
+nbiternotpena=0;
+nbiterpenalised1=0
+pena1=4.0
+nbiterpenalised2=50
+pena2=6.0
+nbitertopena1=nbiternotpena+premiereiter
+nbitertopena2=nbiternotpena+nbiterpenalised1+premiereiter
+nbiter=nbiternotpena+nbiterpenalised1+nbiterpenalised2+premiereiter
+
+#type de pilotage
+#pilotage="energie" #theoriquement le plus interressant
+pilotage="vmises" #permet de generer une topologie plus claire
+
+raffinement_actif=False
+#attention si c est True il faut definir 2 fois un certain nombre de parametre a la fin de la boucle
+#parametre homard sur le rafinament maximum
+#pour le moment le rafinement porte sur l'erreur elastique
+#un rafinement sur le chratio=0.5 pourrait etre plus interressant.
+NIVE_MAX=2,
+DIAM_MIN=0.8,
+singlefilesauv=False#determine si on cree un gros fichier a la fin
+
+
+para={};
+para['penalistation']=1.0;
+para['lagrangevolume']=10.; #attention si c trop faible le volume reste plein
+Zerodivision=1.e-12
+
+VolumeObj=1.;
+
+###################################################
+#champ initial
+#peut etre lus ou etre calculer
+#generation a partie de zero
+CHCOM=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_R', MODELE=MODE,PROL_ZERO='OUI',
+		AFFE=_F(TOUT='OUI', NOM_CMP=('X1'),VALE=volumeratio));
+#lecture sur un fichier
+#CHCOM=LIRE_CHAMP(TYPE_CHAM='NOEU_NEUT_R',UNITE=21,MAILLAGE=MAIL,NOM_MED='CHCOM',NOM_CMP_IDEM='OUI',)
+
+#compute CHRATIO
+#calcul le champ qui done une densite entre 0 et 1
+def F_penal(x):
+     return x**para['penalistation'];
+Fpenal= FORMULE(NOM_PARA= ('X1'), VALE='F_penal(X1)')
+CHFP=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+		AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=(Fpenal)));
+CHRATIO=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFP, CHAM_PARA=(CHCOM,));
+
+#compute young
+#calcul le champ qui donne le module d'young a partir du champ de ratio
+def f_young(x):
+     if x>1: return Eini;
+     if x<Precision: return Eini*Precision;
+     return x*Eini;
+FYOUNG= FORMULE(NOM_PARA= ('X1'), VALE='f_young(X1)')
+CHFY=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+		AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=(FYOUNG)));
+CHYOUNG=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFY, CHAM_PARA=(CHRATIO,));
+
+#compute new density
+      #theta = (p*intermed*coef/lagrange)^(1/(p+1));
+      #theta = min(1,theta);
+      #theta = max(theta,thetamin);
+#la densite depend du volume 
+def RatioFromEnel(x,x1):
+        #print x,x1;
+        retour=0.
+        if (para['lagrangevolume']<Zerodivision):
+                retour=VolumeObj*5.
+        else:
+                retour=(para['penalistation']*max(x,0.)*x1/para['lagrangevolume'])**(1./(para['penalistation']+1.))
+                #print retour;
+                #print para['penalistation'],para['lagrangevolume']
+                retour=max(retour,Precision)
+                retour=min(retour,1.)
+        #print "x,x1,para['lagrangevolume'],retour",x,x1,para['lagrangevolume'],retour;
+        return retour
+
+if (pilotage=="energie"):
+        FMULT1= FORMULE(NOM_PARA= ('TOTALE','X1'),VALE='RatioFromEnel(TOTALE,X1)')
+if (pilotage=="vmises"):
+        FMULT1= FORMULE(NOM_PARA= ('VMIS','X1'),VALE='RatioFromEnel(VMIS,X1)')
+CHFMU1=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+           AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=FMULT1));
+
+
+#materiau as function of X1
+NU_F=DEFI_CONSTANTE(VALE=0.3)
+E_F= DEFI_FONCTION(NOM_PARA='NEUT1',VALE=(+1.E-9,+1.E-9,1.E+9,+1.E+9),PROL_DROITE='LINEAIRE',PROL_GAUCHE='LINEAIRE')
+MAMEC=DEFI_MATERIAU (ELAS_FO=_F(E=E_F,NU=NU_F,RHO=1.))
+CHMATE=AFFE_MATERIAU(MAILLAGE=MAIL,
+			AFFE=_F(TOUT='OUI',MATER=MAMEC),
+			AFFE_VARC=_F(NOM_VARC='NEUT1',CHAMP_GD=CHYOUNG),INFO=1
+			)
+
+#step for stat_non_line
+time=DEFI_LIST_REEL(DEBUT=0,INTERVALLE=_F(JUSQU_A=1,PAS=1,),);
+
+#Save of current iterration
+if (singlefilesauv and not(raffinement_actif)):
+        RESRATIO=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='DEPL',AFFE=_F(CHAM_GD=CHRATIO,MODELE=MODE,INST=0),);
+        #RESRATIO=CREA_RESU(reuse=RESRATIO,OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='REAC_NODA',AFFE=_F(CHAM_GD=CHCOM,MODELE=MODE,INST=0),);
+
+#####################
+#volume determination
+#Volume determination from CHCOM
+def VolFromChcom():
+        CH2=CREA_CHAMP(OPERATION='ASSE', TYPE_CHAM='NOEU_SIEF_R',MODELE=MODE, PROL_ZERO='OUI', ASSE=_F(TOUT='OUI', CHAM_GD=CHCOM,NOM_CMP=('X1',), NOM_CMP_RESU = ('SIXX',)), )
+        CH2elno=CREA_CHAMP(OPERATION='DISC', TYPE_CHAM='ELGA_SIEF_R',MODELE=MODE,PROL_ZERO='OUI', CHAM_GD=CH2, )
+        resutemp=CREA_RESU(OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='SIEF_ELGA',AFFE=_F(CHAM_GD=CH2elno,MODELE=MODE,INST=1),);
+        taatemp=POST_ELEM(INFO=2, MODELE=MODE,RESULTAT=resutemp, INTEGRALE=_F(TOUT='OUI',NOM_CHAM ='SIEF_ELGA',NOM_CMP ='SIXX'),);
+        tatemp=taatemp.EXTR_TABLE();
+        voli=tatemp.INTE_SIXX[0];
+        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CH2,resutemp,taatemp,CH2elno),),);
+        #print "para['lagrangevolume'],voli",para['lagrangevolume'],voli
+        return voli;
+VolumeObj=VolFromChcom();
+VolumeIni=VolumeObj/volumeratio;
+aster.affiche('RESULTAT', "volume objectif:"+str(VolumeObj)+" VolumeIni:"+str(VolumeIni));
+
+DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHCOM),),);
+#Volume determination from CHENEL and lagrangevolume
+def VolFromLag(Lag):
+        para['lagrangevolume']=Lag;
+        CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFMU1, CHAM_PARA=(CHENEL,CHRATIO));
+        retour= VolFromChcom()
+        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHCOM),),);
+        return retour;
+def VolObj(Lag):
+        retour=(VolFromLag(Lag)-VolumeObj)**2
+        #print "volobj try,retour",Lag, retour
+        return retour
+
+
+##efective loops
+for k in range(premiereiter,nbiter+1):
+        #solve and calcul the probleme
+        aster.affiche('RESULTAT', 50*"#"+"\niteration %d"%k)
+        if (k>nbitertopena1):
+                para['penalistation']=pena1;
+        if (k>nbitertopena2):
+                para['penalistation']=pena2;
+        
+        T=[None]*len(tabchar)
+        for chark in range(0,len(tabchar)):
+                resu=MECA_STATIQUE(MODELE=MODE,
+                     CHAM_MATER=CHMATE,#cas avec champ de matiere variable
+                     #CHAM_MATER=MATE,#cas avec matiere fixe
+                     #SOLVEUR=_F(METHODE='GCPC'),#bon mais pas precis ?produit un design etrange?
+                     #SOLVEUR=_F(METHODE='MUMPS'),
+                     #SOLVEUR=_F(METHODE='MULT_FRONT'),#par default
+                     EXCIT=_F(CHARGE=tabchar[chark]),);
+                
+                #indicateur d'erreur
+                resu = CALC_ELEM(reuse=resu,RESULTAT=resu,OPTION=('SIEF_ELNO'));
+                if (raffinement_actif):
+                        resu=CALC_ERREUR(reuse =resu,RESULTAT=resu,OPTION=('ERME_ELEM',),);
+                
+                #densite denergie
+                #test sans group_ma pour eviter les avertissements
+                if (pilotage=="energie"):
+                        resu = CALC_ELEM(reuse=resu,RESULTAT=resu,OPTION=('ENEL_ELGA','ENEL_ELNO'));
+                        resu = CALC_NO(reuse=resu,RESULTAT=resu,OPTION=('ENEL_NOEU',));
+                if (pilotage=="vmises"):
+                        resu = CALC_ELEM(reuse=resu,RESULTAT=resu,OPTION=('SIEQ_ELGA','SIEQ_ELNO'));
+                        resu = CALC_NO(reuse=resu,RESULTAT=resu,OPTION=('SIEQ_NOEU',));
+                        
+                #resu = CALC_ELEM(reuse=resu,RESULTAT=resu,OPTION=('ENEL_ELGA','ENEL_ELNO'),GROUP_MA ='tout');
+                #resu = CALC_NO(reuse=resu,RESULTAT=resu,OPTION=('ENEL_NOEU',),GROUP_MA ='tout');
+                
+                #IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,RESULTAT=resu,),);
+                #IOFile.SaveFileLinux(UNITE=81,FILENAME="resu%d.med"%k)
+                
+                if (chark==0):
+                        if (pilotage=="energie"):
+                                CHENEL=CREA_CHAMP(TYPE_CHAM='NOEU_ENER_R', OPERATION='EXTR',RESULTAT=resu,NOM_CHAM='ENEL_NOEU',)
+                        if (pilotage=="vmises"):
+                                CHENEL=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R', OPERATION='EXTR',RESULTAT=resu,NOM_CHAM='SIEQ_NOEU',)
+                        if (raffinement_actif):
+                                CHERRE=CREA_CHAMP(TYPE_CHAM='ELEM_ERRE_R', OPERATION='EXTR',RESULTAT=resu,NOM_CHAM='ERME_ELEM',)
+                else:
+                        if (pilotage=="energie"):
+                                CHENELT=CREA_CHAMP(TYPE_CHAM='NOEU_ENER_R', OPERATION='EXTR',RESULTAT=resu,NOM_CHAM='ENEL_NOEU',)
+                        if (pilotage=="vmises"):
+                                CHENELT=CREA_CHAMP(TYPE_CHAM='NOEU_SIEF_R', OPERATION='EXTR',RESULTAT=resu,NOM_CHAM='SIEQ_NOEU',)
+                        T[chark]=CREA_CHAMP(TYPE_CHAM='NOEU_ENER_R',MODELE=MODE, OPERATION='ASSE',
+                              ASSE=(_F(CHAM_GD=CHENEL,TOUT='OUI',CUMUL='OUI',COEF_R=1.),
+                             _F(CHAM_GD=CHENELT,TOUT='OUI',CUMUL='OUI',COEF_R=1.),),
+                             )
+                        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHENELT,CHENEL)));
+                        CHENEL=T[chark]
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(resu,),),);
+        
+        #Post traitement pour determiner le nouveau champs de matiere
+        newlagrange=brent(VolObj,brack=(0.,para['lagrangevolume']),)
+        #print "newlagrange",newlagrange
+        para['lagrangevolume']=newlagrange;
+        #
+        CHCOM=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFMU1, CHAM_PARA=(CHENEL,CHRATIO));
+        IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHCOM,),);
+        IOFile.SaveFileLinux(UNITE=81,FILENAME="CHCOM%d.med"%k)
+        #IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHENEL,),);
+        #IOFile.SaveFileLinux(UNITE=81,FILENAME="CHENELIN%d.med"%k)
+        #IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHRATIO,),);
+        #IOFile.SaveFileLinux(UNITE=81,FILENAME="CHRATIOIN%d.med"%k)
+        
+        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHRATIO,CHENEL)));
+        CHRATIO=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFP, CHAM_PARA=(CHCOM,));
+        IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=MAIL,CHAM_GD=CHRATIO,),);
+        IOFile.SaveFileLinux(UNITE=81,FILENAME="CHRCURM%d.med"%k)
+        if (singlefilesauv and not(raffinement_actif)):
+                RESRATIO=CREA_RESU(reuse=RESRATIO,OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='DEPL',AFFE=_F(CHAM_GD=CHRATIO,MODELE=MODE,INST=k),);
+        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHCOM,),),);
+        #
+        
+        ################################################################
+        #homard creation du nouveau maillage
+        if (raffinement_actif):
+                NEWMAIL=CO('M%d'%k)
+                NEWCH=CO('C%d'%k)
+                MACR_ADAP_MAIL(MAILLAGE_N=MAIL,
+                     MAILLAGE_NP1=NEWMAIL,
+                     ADAPTATION='RAFF_DERA',
+                     #RESULTAT_N=resu,
+                     #NOM_CHAM='ERME_ELEM',
+                     CHAM_GD=CHERRE,
+                     NOM_CMP='ERREST',
+                     MAJ_CHAM=_F(CHAM_MAJ=NEWCH,
+                          CHAM_GD=CHRATIO,
+                          TYPE_CHAM='NOEU_NEUT_R',
+                          #TYPE_CHAM='NOEU_ENEL_R',
+                          #RESULTAT=resu,
+                          #NOM_CHAM='ENEL_NOEU',
+                          #NUME_ORDRE=1,
+                          ),
+                     CRIT_RAFF_PE=0.1,
+                     CRIT_DERA_PE=0.02,
+                     NIVE_MAX=NIVE_MAX,
+                     DIAM_MIN=DIAM_MIN,
+                     #pas d'affichage complementaire
+                     INFO=1,
+                     NOMBRE='OUI'
+                     #QUALITE='OUI',
+                     #CONNEXITE='OUI',
+                     #TAILLE='OUI',
+                     );
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHERRE),),);
+                
+                #sauvegarde du nouveau champ et nouveau maillage
+                IMPR_RESU(FORMAT='MED',UNITE=81,RESU=_F(MAILLAGE=NEWMAIL,CHAM_GD=NEWCH,),);
+                IOFile.SaveFileLinux(UNITE=81,FILENAME="CHRNEWM%d.med"%k)
+
+                
+                ################################################################
+                #permutation des maillages et des champs
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(MAIL,CHRATIO),),);
+                MAIL=NEWMAIL
+                CHRATIO=NEWCH
+                
+                ################################################################
+                #mise a jours des conceptes lie au maillages
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(MODE),),);
+                MODE=AFFE_MODELE(MAILLAGE=MAIL,
+                     AFFE=_F(TOUT='OUI',
+                             PHENOMENE='MECANIQUE',
+                             MODELISATION='3D',),);
+                
+                for a in tabchar:
+                                        DETRUIRE(INFO=1,CONCEPT=_F(NOM=(a),),);
+                charZ=AFFE_CHAR_MECA(MODELE=MODE,
+                        DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+                        FORCE_FACE =_F (GROUP_MA='forc',FZ=-100,),);
+                charX=AFFE_CHAR_MECA(MODELE=MODE,
+                        DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+                        FORCE_FACE =_F (GROUP_MA='forc',FX=10,),);
+                charY=AFFE_CHAR_MECA(MODELE=MODE,
+                        DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+                        FORCE_FACE =_F (GROUP_MA='forc',FY=10,),);
+                tabchar=[charZ,charX,charY]
+                
+                #char=AFFE_CHAR_MECA(MODELE=MODE,
+                #        DDL_IMPO=(_F(GROUP_MA='base',DX=0.0,DY=0.0,DZ=0.0),),
+                #        FORCE_FACE =_F (GROUP_MA='forc',FX=-100,),);
+                
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHFY),),);
+                CHFY=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+                     AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=(FYOUNG)));
+                
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHFMU1,CHFP),),);
+                CHFMU1=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+                     AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=FMULT1));
+                CHFP=CREA_CHAMP(OPERATION='AFFE',TYPE_CHAM='NOEU_NEUT_F', MODELE=MODE,PROL_ZERO='OUI',
+                     AFFE=_F(GROUP_MA ='tout', NOM_CMP=('X1'),VALE_F=(Fpenal)));
+        
+        else:
+                DETRUIRE(INFO=1,CONCEPT=_F(NOM=(CHMATE,CHYOUNG),),);
+                CHYOUNG=CREA_CHAMP( OPERATION='EVAL', TYPE_CHAM='NOEU_NEUT_R', CHAM_F=CHFY, CHAM_PARA=(CHRATIO,));
+                CHMATE=AFFE_MATERIAU(MAILLAGE=MAIL,AFFE=_F(TOUT='OUI',MATER=MAMEC),AFFE_VARC=_F(NOM_VARC='NEUT1',CHAMP_GD=CHYOUNG),INFO=1)
+                #DETRUIRE(INFO=1,CONCEPT=_F(NOM=(MATE),),);
+                #MATE=AFFE_MATERIAU(MAILLAGE=MAIL,
+                #       AFFE=_F(TOUT='OUI',
+                #               MATER=ACIER,),);
+
+
+
+     
+
+
+#RESRATIO=CREA_RESU(reuse=RESRATIO,OPERATION='AFFE',TYPE_RESU='EVOL_ELAS',NOM_CHAM='DEPL',AFFE=_F(CHAM_GD=CHRATIO,MODELE=MODE,INST=1),);
+if (singlefilesauv and not(raffinement_actif)):
+        IMPR_RESU(FORMAT='MED',UNITE=80,RESU=_F(MAILLAGE=MAIL,RESULTAT=RESRATIO,),);
+
+FIN();

@@ -1,0 +1,60 @@
+############################################################
+resultat du calcul elastique pour le volume plein cas de charge n1
+############################################################
+
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT depl2 CALCULE LE 25/08/2010 A 13:06:33 DE TYPE           
+#TABLE_SDASTER                                                                   
+ CHAMP_GD         NUME_ORDRE   INST         TOUT             MAX_DX       NO_MAX_DX        MIN_DX       NO_MIN_DX        MAX_DY       NO_MAX_DY        MIN_DY       NO_MIN_DY        MAX_DZ       NO_MAX_DZ        MIN_DZ       NO_MIN_DZ       
+ DEPL                        1  0.00000E+00 TOUT              1.83137E-02 N214             -7.98329E-20 N80               1.24729E-03 N172             -1.24212E-03 N40               7.41168E-03 N150             -7.41968E-03 N54             
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT cont CALCULE LE 25/08/2010 A 13:06:33 DE TYPE            
+#TABLE_SDASTER                                                                   
+ CHAMP_GD         NUME_ORDRE   INST         TOUT             MAX_VMIS     MA_MAX_VMIS      PT_MAX_VMIS  MIN_VMIS     MA_MIN_VMIS      PT_MIN_VMIS 
+ EQUI_ELGA_SIGM              1  0.00000E+00 TOUT              1.88824E+04 M16653                      1  1.83447E+02 M16737                      1
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT enrgelas CALCULE LE 25/08/2010 A 13:06:33 DE TYPE        
+#TABLE_SDASTER                                                                   
+ NUME_ORDRE   INST         TRAV_ELAS    TRAV_REEL   
+            1  0.00000E+00  8.72555E+05  0.00000E+00
+
+lvl.dfo_compliance: Compliance :1745109.745399
+############################################################
+resultat du calcul elastique pour le volume plein cas de charge n2
+############################################################
+
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT depl2 CALCULE LE 25/08/2010 A 13:06:47 DE TYPE           
+#TABLE_SDASTER                                                                   
+ CHAMP_GD         NUME_ORDRE   INST         TOUT             MAX_DX       NO_MAX_DX        MIN_DX       NO_MIN_DX        MAX_DY       NO_MAX_DY        MIN_DY       NO_MIN_DY        MAX_DZ       NO_MAX_DZ        MIN_DZ       NO_MIN_DZ       
+ DEPL                        1  0.00000E+00 TOUT              1.24080E-05 N64              -1.24309E-05 N136              1.83476E-04 N214             -1.04876E-21 N105              7.43541E-05 N162             -7.44399E-05 N127            
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT cont CALCULE LE 25/08/2010 A 13:06:47 DE TYPE            
+#TABLE_SDASTER                                                                   
+ CHAMP_GD         NUME_ORDRE   INST         TOUT             MAX_VMIS     MA_MAX_VMIS      PT_MAX_VMIS  MIN_VMIS     MA_MIN_VMIS      PT_MIN_VMIS 
+ EQUI_ELGA_SIGM              1  0.00000E+00 TOUT              1.86380E+02 M4533                       1  2.19343E+00 M7398                       1
+
+#
+#--------------------------------------------------------------------------------
+#
+#ASTER 10.01.02 CONCEPT enrgelas CALCULE LE 25/08/2010 A 13:06:47 DE TYPE        
+#TABLE_SDASTER                                                                   
+ NUME_ORDRE   INST         TRAV_ELAS    TRAV_REEL   
+            1  0.00000E+00  8.73201E+01  0.00000E+00
+
+lvl.dfo_compliance: Compliance :174.640195

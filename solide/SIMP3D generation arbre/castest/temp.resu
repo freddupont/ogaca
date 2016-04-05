@@ -1,0 +1,119 @@
+                                        -- CODE_ASTER -- VERSION DE DEVELOPPEMENT 11.00.10 --
+
+                                                         VERSION SEQUENTIELLE
+
+                                                    COPYRIGHT  EDF-R&D 1991 - 2011
+
+                                               EXECUTION DU : ME-31-AOUT-2011 10:30:19
+
+                                                    PLATE-FORME : ADPI-LAPTOP     
+
+                                                 NB MAX PROC OpenMP:   1             
+
+                                                      SYSTEME : LINUX           
+
+                                                        CPU : X86_64          
+
+  
+ ***************************************************
+  MECANIQUE : ESTIMATEUR D'ERREUR EN RESIDU EXPLICITE
+ ***************************************************
+    SD RESULTAT: RESU00  
+ NUMERO D'ORDRE:     1
+        INSTANT:   0.00000000D+00
+ ERREUR            ABSOLUE         RELATIVE   NORME DE SIGMA
+ TOTALE            3.63485023D+06  52.850 %   5.83861146D+06
+ TERME VOLUMIQUE   1.38697899D+06  23.112 %
+ TERME SAUT        7.74723606D+05  13.154 %
+ TERME NORMAL      1.60737234D+06  26.543 %
+  
+ ***************************************************
+  MECANIQUE : ESTIMATEUR D'ERREUR EN RESIDU EXPLICITE
+ ***************************************************
+    SD RESULTAT: RESU02  
+ NUMERO D'ORDRE:     1
+        INSTANT:   0.00000000D+00
+ ERREUR            ABSOLUE         RELATIVE   NORME DE SIGMA
+ TOTALE            3.17896512D+06  48.132 %   5.78930288D+06
+ TERME VOLUMIQUE   1.25236350D+06  21.143 %
+ TERME SAUT        1.23724649D+06  20.899 %
+ TERME NORMAL      1.03076960D+06  17.529 %
+
+--------------------------------------------------------------------------------
+ ---- CHAM_NO          NOM_CMP          GROUP_NO
+      DEPL2            DX               N55
+      REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR           TOLE            
+ OK   NON_REGRESSION   XXXX             6.036338         6.0363380042925  7.1E-08%         1.0E-06%        
+  
+ ---- CHAM_NO          NOM_CMP          GROUP_NO
+      DEPL2            DZ               N56
+      REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR           TOLE            
+ OK   NON_REGRESSION   XXXX             -14.0615426      -14.061542559686 2.9E-07%         1.0E-06%        
+  
+ ---- RESULTAT         NUME_ORDRE       NOM_CHAM         NOM_CMP          GROUP_NO
+      RESU02           1                DEPL             DZ               A
+      REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR           TOLE            
+ OK   NON_REGRESSION   XXXX             -17.3329132      -17.332913230476 1.8E-07%         1.0E-06%        
+  
+ ---- RESULTAT         NUME_ORDRE       NOM_CHAM         NOM_CMP          GROUP_NO
+      RESU02           1                ERME_NOEU        ERREST           A
+      REFERENCE        LEGENDE          VALE_REF         VALE_CAL         ERREUR           TOLE            
+ OK   NON_REGRESSION   XXXX             51818.753        51818.753009004  1.7E-08%         1.0E-04%        
+  
+
+   !-----------------------------------------------------------------------!
+   !   Liste des alarmes émises lors de l'exécution du calcul.             !
+   !                                                                       !
+   !   Les alarmes que vous avez choisies d'ignorer sont précédées de (*). !
+   !   Nombre d'occurrences pour chacune des alarmes :                     !
+   !          aucune alarme                                                !
+   !-----------------------------------------------------------------------!
+
+ <I> <FIN> FERMETURE DE LA BASE "GLOBALE" EFFECTUEE.
+ <I> <FIN> ARRET NORMAL DANS "FIN" PAR APPEL A "JEFINI".
+  
+ <I> <FIN> MEMOIRE JEVEUX MINIMALE REQUISE POUR L'EXECUTION :                      20.38 Mo
+ <I> <FIN> MAXIMUM DE MEMOIRE UTILISEE PAR LE PROCESSUS LORS DE L'EXECUTION :     211.24 Mo
+
+ ********************************************************************************
+ * COMMAND                  :       USER :     SYSTEM :   USER+SYS :    ELAPSED *
+ ********************************************************************************
+ * init (jdc)               :       1.63 :       0.11 :       1.74 :       1.74 *
+ *  . compile               :       0.00 :       0.00 :       0.00 :       0.00 *
+ *  . exec_compile          :       0.19 :       0.02 :       0.21 :       0.21 *
+ *  . report                :       0.03 :       0.00 :       0.03 :       0.03 *
+ *  . build                 :       0.00 :       0.00 :       0.00 :       0.00 *
+ * DEBUT                    :       0.03 :       0.04 :       0.07 :       0.05 *
+ * DEFI_MATERIAU            :       0.00 :       0.00 :       0.00 :       0.00 *
+ * LIRE_MAILLAGE            :       0.03 :       0.00 :       0.03 :       0.03 *
+ * MACR_INFO_MAIL           :       0.13 :       0.04 :       0.17 :       0.11 *
+ * AFFE_MODELE              :       0.04 :       0.00 :       0.04 :       0.04 *
+ * MODI_MAILLAGE            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * AFFE_MATERIAU            :       0.02 :       0.00 :       0.02 :       0.02 *
+ * AFFE_CHAR_MECA           :       0.06 :       0.00 :       0.06 :       0.06 *
+ * MECA_STATIQUE            :       0.14 :       0.02 :       0.16 :       0.09 *
+ * CALC_ELEM                :       0.06 :       0.00 :       0.06 :       0.06 *
+ * CALC_ERREUR              :       0.06 :       0.00 :       0.06 :       0.06 *
+ * MACR_ADAP_MAIL           :       0.29 :       0.04 :       0.33 :       0.27 *
+ * AFFE_MODELE              :       0.05 :       0.00 :       0.05 :       0.05 *
+ * AFFE_MATERIAU            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * AFFE_CHAR_MECA           :       0.06 :       0.00 :       0.06 :       0.06 *
+ * MECA_STATIQUE            :       0.17 :       0.00 :       0.17 :       0.10 *
+ * MACR_ADAP_MAIL           :       0.26 :       0.05 :       0.31 :       0.25 *
+ * AFFE_MODELE              :       0.05 :       0.00 :       0.05 :       0.05 *
+ * AFFE_MATERIAU            :       0.01 :       0.00 :       0.01 :       0.01 *
+ * AFFE_CHAR_MECA           :       0.06 :       0.00 :       0.06 :       0.06 *
+ * MECA_STATIQUE            :       0.16 :       0.01 :       0.17 :       0.11 *
+ * CALC_ELEM                :       0.07 :       0.00 :       0.07 :       0.07 *
+ * CALC_ERREUR              :       0.08 :       0.00 :       0.08 :       0.08 *
+ * CALC_NO                  :       0.07 :       0.00 :       0.07 :       0.07 *
+ * DEFI_GROUP               :       0.02 :       0.00 :       0.02 :       0.02 *
+ * TEST_RESU                :       0.00 :       0.00 :       0.00 :       0.00 *
+ * FIN                      :       0.01 :       0.04 :       0.05 :       0.05 *
+ *  . part Superviseur      :       2.98 :       0.27 :       3.25 :       3.07 *
+ *    . sdveri              :       0.74 :       0.00 :       0.74 :       0.76 *
+ *  . part Fortran          :       0.64 :       0.08 :       0.72 :       0.50 *
+ ********************************************************************************
+ * TOTAL_JOB                :       3.62 :       0.35 :       3.97 :       3.57 *
+ ********************************************************************************
+

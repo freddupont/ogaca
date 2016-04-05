@@ -1,0 +1,51 @@
+P profastk fred@localhost:/home/fred/asteropti/canteliver3Dxfem/opti_xfem_ini.astk
+P serveur localhost
+P noeud localhost
+P username fred
+P mclient localhost
+P uclient fred
+P version STA10.1
+P lang en
+P debug debug
+P mode interactif
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P classe 
+P depart 
+P distrib 
+P flashdir 
+P exectool 
+P nomjob opti_xfem_ini
+P origine ASTK 1.8.0
+P display localhost:0.0
+A args 
+A memjeveux 378.0
+P mem_aster 100.0
+A tpmax 54000
+P memjob 1548288
+P tpsjob 900
+P follow_output yes
+P xterm /usr/bin/xterm -display localhost:0.0 
+P nbmaxnook 5
+P cpresok RESNOOK
+P facmtps 1
+P corefilesize unlimited
+F py /home/fred/asteropti/canteliver3Dxfem/bibli/opti_xfem.py D 0
+F exec /home/fred/asteropti/canteliver3Dxfem/bibli/modiaster.exec D 0
+R cmde /home/fred/asteropti/canteliver3Dxfem/bibli/modiaster.cmde D 0
+F comm /home/fred/asteropti/canteliver3Dxfem/opti_xfem_ini.comm D 1
+F libr /home/fred/asteropti/canteliver3Dxfem/optipara.py D 2
+F mess /home/fred/asteropti/canteliver3Dxfem/study.mess R 6
+F resu /home/fred/asteropti/canteliver3Dxfem/study.resu R 8
+F mmed /home/fred/asteropti/canteliver3Dxfem/VVMesha_3000.15.med D 20
+F libr /home/fred/asteropti/canteliver3Dxfem/mail_post_ini.med R 80
+F libr /home/fred/asteropti/canteliver3Dxfem/opti.mess R 10
+F libr /home/fred/asteropti/canteliver3Dxfem/evaluation_ini.txt R 11
+F libr /home/fred/asteropti/canteliver3Dxfem/physique.comm D 4
+F libr /home/fred/asteropti/canteliver3Dxfem/resuelas.med R 81
+F mmed /home/fred/asteropti/canteliver3Dxfem/mecastat1.i.med D 82
+F libr /home/fred/asteropti/canteliver3Dxfem/chdfo.med R 83
+P consbtc oui
+P soumbtc oui
+P actions make_etude

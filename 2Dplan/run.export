@@ -1,0 +1,39 @@
+P profastk fred@fred-MP061:/home/fred/asteropti/astersimp/run.astk
+P serveur fred-MP061
+P noeud fred-MP061
+P username fred
+P mclient fred-MP061
+P uclient fred
+P version STA10.3
+P lang fr
+P debug nodebug
+P mode interactif
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P classe 
+P depart 
+P distrib 
+P flashdir 
+P exectool 
+P nomjob run
+P origine ASTK 1.8.4
+P display fred-MP061:0.0
+A args 
+A memjeveux 128.0
+P mem_aster 100.0
+A tpmax 900
+P memjob 524288
+P tpsjob 15
+P nbmaxnook 5
+P cpresok RESNOOK
+P facmtps 1
+P corefilesize unlimited
+F comm /home/fred/asteropti/astersimp/SIMP.comm D 1
+F mess /home/fred/asteropti/astersimp/mess.txt R 6
+F resu /home/fred/asteropti/astersimp/resu.txt R 8
+F libr /home/fred/asteropti/astersimp/chratio.med R 81
+F mmed /home/fred/asteropti/astersimp/platesplit1.med D 20
+P consbtc oui
+P soumbtc oui
+P actions make_etude

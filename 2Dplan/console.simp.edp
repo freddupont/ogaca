@@ -1,0 +1,244 @@
+/////////////////////////////////////////////////////
+//        Méthode SIMP pour la minimisation        //
+//        de la compliance d'une console           //
+//                                                 //
+//         Ecole Polytechnique, MAP 562            //
+//         Copyright G. Allaire, 2004              //
+/////////////////////////////////////////////////////
+
+ofstream fichobj("console.obj") ;
+string sauve="console";		// nom du fichier de sauvegarde
+int niternp=5;			// nombre minimum d'itérations non pénalisées
+int niter=50;			// nombre d'itérations total
+int n=3;			// Taille du maillage
+real compliance,compliance0,compliance1;	// Compliance
+string legende;			// Légende pour les sorties graphiques
+real E=1;			// Module de Young
+real nu=0.3;			// Coefficient de Poisson
+real lagrange=1;		// Multiplicateur de Lagrange pour le volume
+real lagmin, lagmax;		// Encadrement du multiplicateur de Lagrange
+real masse0;			// Masse initiale
+real masse,masse1;		// Masse de la forme courante
+int inddico ;			// Indice dans la recherche du multiplicateur de Lagrange
+real thetamin=0.001;		// Densité minimale de matière
+real thetamoy=0.4;		// Densité moyenne de matière
+real pi=4*atan(1);		// Valeur de pi=3.14159...
+real p=1;			// Exposant de pénalisation
+real gris,gris0;		// Indicateur de pénalisation
+int ii0=0;			// Indice de mise à jour de l'exposant de pénalisation
+func f1=0;  			// Forces appliquées
+func f2=-1;
+
+// Définition des isovaleurs de tracé
+real[int] vviso(21);
+for (int i=0;i<21;i++)
+vviso[i]=i*0.05 ;
+/////////////////////////////////////
+// Calcul des coefficients de Lamé //
+/////////////////////////////////////
+real lambda=E*nu/((1.+nu)*(1.-2.*nu));
+real mu=E/(2.*(1.+nu));
+
+///////////////////////////// 			1:Condition de Dirichlet
+// Définition du domaine   // 			2:Condition Libre
+///////////////////////////// 			3:Condition de Neuman non nulle
+mesh Th;
+border bd1(t=0,0.45)		{ x=+1; y=t;label=2; };   // bord droit de la forme
+border bd2(t=0.45,0.55)		{ x=1;  y=t;label=3; };
+border bd3(t=0.55,1)		{ x=1;  y=t;label=2; };
+border bg(t=1,0)		{ x=-1; y=t;label=1; };   // bord gauche de la forme
+border bs(t=1,-1)		{ x=t;  y=1;label=2; };   // bord supérieur de la forme
+border bi(t=-1,1)		{ x=t;  y=0;label=2; };   // bord inférieur de la forme
+
+//////////////////////////////
+// construction du maillage //
+//////////////////////////////
+int m=int(4.5*n) ;
+Th= buildmesh (bg(10*n)+bs(20*n)+bi(20*n)+bd1(m)+bd2(n)+bd3(m));
+plot(Th,wait=0,ps=sauve+".maillage.eps");
+
+savemesh(Th,sauve+".msh");
+
+fespace Vh0(Th,P0);
+fespace Vh2(Th,[P2,P2]);
+Vh2 [u,v],[w,s];
+Vh0 coef,theta,eu,ev,euv,intermed;
+// theta = densité de matière
+// coef  = theta^p
+
+func theta0=thetamoy;
+theta=theta0;
+coef=theta^p;
+// Masse initiale
+real volume=int2d(Th)(1.);
+masse0 = int2d(Th)(theta);
+masse0 = masse0/volume ;
+
+///////////////////////////
+// Definition du système //
+///////////////////////////
+problem elasticite([u,v],[w,s]) =
+    int2d(Th)(
+               2.*coef*mu*(dx(u)*dx(w)+dy(v)*dy(s)+((dx(v)+dy(u))*(dx(s)+dy(w)))/2.)
+              +coef*lambda*(dx(u)+dy(v))*(dx(w)+dy(s))
+	)
+    -int1d(Th,3)(f1*w+f2*s)
+	+on(1,u=0,v=0)   
+;
+//////////////////////////////////
+//     Boucle d'optimisation    //
+//////////////////////////////////
+
+int iter;
+
+for (iter=1;iter< niter+1;iter=iter+1)
+
+{
+
+elasticite;
+
+compliance1 = compliance ;
+compliance = int1d(Th,3)(f1*u+f2*v);
+
+cout <<"Iteration " <<iter <<" -------------- Compliance "<< compliance <<endl;
+
+fichobj << compliance << endl ;
+
+
+cout <<"Iteration " <<iter <<" ----------------------------------------" <<endl;
+
+// Calcul des composantes du tenseur des deformations
+eu = dx(u);
+ev = dy(v);
+euv = (dx(v)+dy(u))/2;				
+
+intermed = 2*coef*mu*(eu^2+ev^2+((2*euv)^2)/2.)+coef*lambda*(eu+ev)^2;
+
+//theta = (intermed*coef/lagrange)^(1/2.) ;
+theta = (p*intermed*coef/lagrange)^(1/(p+1)) ;
+theta = min(1,theta);
+theta = max(theta,thetamin);
+
+/////////////////////////////////////////////////
+// Determination du multiplicateur de Lagrange //
+/////////////////////////////////////////////////
+masse = int2d(Th)(theta)/volume;
+masse1 = masse;
+
+// Encadrement du multiplicateur de Lagrange
+if (masse1 < masse0)
+{
+   lagmin = lagrange ;
+   while (masse < masse0)
+{
+      lagrange = lagrange/2 ;
+      theta = (p*intermed*coef/lagrange)^(1/(p+1));
+      theta = min(1,theta);
+      theta = max(theta,thetamin);
+      masse = int2d(Th)(theta)/volume ;
+};
+   lagmax = lagrange ;
+};
+//
+if (masse1 > masse0)
+{
+   lagmax = lagrange ;
+   while (masse > masse0)
+{
+      lagrange = 2*lagrange ;
+      theta = (p*intermed*coef/lagrange)^(1/(p+1));
+      theta = min(1,theta);
+      theta = max(theta,thetamin);
+      masse = int2d(Th)(theta)/volume ;
+};
+   lagmin = lagrange ;
+};
+//
+if (masse1 == masse0) 
+{
+   lagmin = lagrange ;
+   lagmax = lagrange ;
+};
+
+// dichotomie sur le multiplicateur de Lagrange
+inddico=0;
+while ((abs(1.-masse/masse0)) > 0.000001)
+{
+   lagrange = (lagmax+lagmin)*0.5 ;
+      theta = (p*intermed*coef/lagrange)^(1/(p+1));
+      theta = min(1,theta);
+      theta = max(theta,thetamin);
+   masse = int2d(Th)(theta)/volume ;
+   inddico=inddico+1;
+   if (masse < masse0)
+      {lagmin = lagrange ;} ;
+   if (masse > masse0)
+      {lagmax = lagrange ;} ;
+};
+
+cout<<"Nombre d'iterations de Lagrange "<<inddico<<endl;
+
+//////////////////
+// Pénalisation //
+//////////////////
+
+coef = theta^p;
+
+///////////////////////////////////////////////
+// Mise à jour de l'exposant de pénalisation //
+///////////////////////////////////////////////
+ii0=ii0+1 ;
+if (iter == 1)
+   {compliance0=compliance;} ;
+if (iter < niternp)
+   {p=1 ;} ;
+if (iter >= niternp)
+   {
+   if ( (abs(compliance-compliance1) < 0.01*compliance0)&(ii0 > 4) )
+   {gris=int2d(Th)((theta-thetamin)*(1.-theta))*4/volume ;
+   p=p*(1+0.3^(1.+gris*0.5)) ;
+   p=min(p,4.);
+   ii0 = 0 ;
+   cout << "gris = "<<gris << " ,  p = "<<p << endl ;} ;
+   } ;
+
+////////////////////////////////////////
+// Affichage de la densite de matiere //
+////////////////////////////////////////
+
+legende="Iteration "+iter+", Compliance "+compliance+", Masse="+masse+", p="+p;
+plot(Th,theta,fill=1,value=true,viso=vviso,cmm=legende,wait=0);
+//plot(Th,theta,fill=1,value=true,viso=vviso,cmm=legende,wait=0,ps=sauve+iter+".eps");
+if (iter == niternp)
+{ ofstream file(sauve+".np.bb");
+	file << theta[].n << " \n";
+	int j;
+	for (j=0;j<theta[].n ; j++)
+	file << theta[][j] << endl;  }
+;
+//
+};
+/////////////////////////////////////
+// Fin de la boucle d'optimisation //
+/////////////////////////////////////
+
+//On sauve la forme finale non penalisee
+legende="Forme finale, Iteration "+niter+", Compliance "+compliance;
+plot(Th,theta,fill=1,value=1,viso=vviso,cmm=legende,ps=sauve+".eps");
+{ ofstream file(sauve+".bb");
+	file << theta[].n << " \n";
+	int j;
+	for (j=0;j<theta[].n ; j++)  
+	file << theta[][j] << endl;  }  	
+exec("xd3d -bord=2 -hidden -fich="+sauve+".bb -iso=11 -nbcol=10 -table=8 "+sauve);
+
+
+
+
+
+
+
+
+
+
+
